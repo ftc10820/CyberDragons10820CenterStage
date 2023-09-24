@@ -18,6 +18,7 @@ public class MecanumChassis extends LinearOpMode {
 
     public DcMotorEx linearSlide;
     public Servo grabber;
+    public Servo gate;
     public CRServo transfer;
 
     @Override
@@ -64,6 +65,13 @@ public class MecanumChassis extends LinearOpMode {
                 grabber.setPosition(0);
             }
 
+            if (gamepad2.dpad_up) {
+
+                gate.setPosition(1);
+            } else if (gamepad2.dpad_down) {
+
+                gate.setPosition(0);
+            }
 
 
 
@@ -81,6 +89,7 @@ public class MecanumChassis extends LinearOpMode {
         linearSlide = hardwareMap.get(DcMotorEx.class, "LinearSlide");
 
         grabber = hardwareMap.get(Servo.class, "Grabber");
+        gate = hardwareMap.get(Servo.class, "Gate");
         transfer = hardwareMap.get(CRServo.class, "Transfer");
 
 

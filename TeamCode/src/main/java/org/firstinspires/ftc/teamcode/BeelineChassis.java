@@ -14,6 +14,9 @@ public class BeelineChassis extends LinearOpMode {
     public DcMotorEx backLeft;
     public DcMotorEx backRight;
 
+    public DcMotorEx intake;
+    public DcMotorEx linearSlide;
+
     @Override
     public void runOpMode() throws InterruptedException {
 
@@ -28,6 +31,19 @@ public class BeelineChassis extends LinearOpMode {
             frontLeft.setPower(-gamepad1.left_stick_y);
             backLeft.setPower(-gamepad1.left_stick_y);
 
+            linearSlide.setPower(gamepad2.right_stick_y);
+
+            if (gamepad2.y) {
+
+                linearSlide.setPower(1);
+            } else if (gamepad2.a) {
+
+                linearSlide.setPower(-1);
+            } else if (gamepad2.x) {
+
+                linearSlide.setPower(0);
+
+            }
 
 
         }
@@ -39,6 +55,9 @@ public class BeelineChassis extends LinearOpMode {
         frontRight = hardwareMap.get(DcMotorEx.class, "FrontRight");
         backLeft = hardwareMap.get(DcMotorEx.class, "BackLeft");
         backRight = hardwareMap.get(DcMotorEx.class, "BackRight");
+
+        linearSlide = hardwareMap.get(DcMotorEx.class, "LinearSlide");
+        intake = hardwareMap.get(DcMotorEx.class, "Intake");
 
     }
 }
