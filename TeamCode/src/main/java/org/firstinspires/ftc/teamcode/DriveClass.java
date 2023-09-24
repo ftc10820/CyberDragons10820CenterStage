@@ -1,13 +1,10 @@
 package org.firstinspires.ftc.teamcode;
 
-import androidx.appcompat.view.ActionBarPolicy;
-
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import org.threeten.bp.DayOfWeek;
 
 // creates a new mecanum drivetrain that is extending off of the drivetrain class
-public class MecanumClass {
+public class DriveClass {
 
     public DcMotorEx frontLeft;
     public DcMotorEx frontRight;
