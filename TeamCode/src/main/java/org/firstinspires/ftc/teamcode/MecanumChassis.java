@@ -18,7 +18,8 @@ public class MecanumChassis extends LinearOpMode {
 
     public DcMotorEx linearSlide;
     public Servo grabber;
-    public Servo gate;
+    public CRServo grabberTurner;
+    public Servo shooter;
     public CRServo transfer;
 
     @Override
@@ -65,12 +66,17 @@ public class MecanumChassis extends LinearOpMode {
                 grabber.setPosition(0);
             }
 
+            if (gamepad1.y) {
+
+                shooter.setPosition(1);
+            }
+
             if (gamepad2.dpad_up) {
 
-                gate.setPosition(1);
+                grabberTurner.setPower(1);
             } else if (gamepad2.dpad_down) {
 
-                gate.setPosition(0);
+                grabberTurner.setPower(-1);
             }
 
 
@@ -81,16 +87,26 @@ public class MecanumChassis extends LinearOpMode {
     }
 
     void initialize() {
-        frontLeft = hardwareMap.get(DcMotorEx.class, "FrontLeft");
+        // setting up drive train
         frontRight = hardwareMap.get(DcMotorEx.class, "FrontRight");
-        backLeft = hardwareMap.get(DcMotorEx.class, "BackLeft");
+        frontLeft = hardwareMap.get(DcMotorEx.class, "FrontLeft");
         backRight = hardwareMap.get(DcMotorEx.class, "BackRight");
+        backLeft = hardwareMap.get(DcMotorEx.class, "BackLeft");
+
+        frontRight.setPower(0);
+        frontLeft.setPower(0);
+        backRight.setPower(0);
+        backLeft.setPower(0);
+
+        frontRight.setDirection(DcMotorEx.Direction.REVERSE);
+        backRight.setDirection(DcMotorEx.Direction.REVERSE);
 
         linearSlide = hardwareMap.get(DcMotorEx.class, "LinearSlide");
 
         grabber = hardwareMap.get(Servo.class, "Grabber");
-        gate = hardwareMap.get(Servo.class, "Gate");
+        grabberTurner = hardwareMap.get(CRServo.class, "GrabberTurner");
         transfer = hardwareMap.get(CRServo.class, "Transfer");
+        shooter = hardwareMap.get(Servo.class, "Shooter");
 
 
     }

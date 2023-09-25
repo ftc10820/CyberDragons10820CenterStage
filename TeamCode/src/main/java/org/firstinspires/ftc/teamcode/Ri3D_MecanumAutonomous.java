@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 @Autonomous
-public class Ri3DAutonomous extends LinearOpMode {
+public class Ri3D_MecanumAutonomous extends LinearOpMode {
 
     public DcMotorEx frontLeft;
     public DcMotorEx frontRight;
@@ -20,7 +20,7 @@ public class Ri3DAutonomous extends LinearOpMode {
         waitForStart();
         if(opModeIsActive()) {
 
-            moveLeft(500, 0.75);
+            moveForward(500, 0.75);
 
 
         }
