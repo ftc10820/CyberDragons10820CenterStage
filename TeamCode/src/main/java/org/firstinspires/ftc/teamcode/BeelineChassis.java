@@ -35,13 +35,13 @@ public class BeelineChassis extends LinearOpMode {
 
             if (gamepad2.y) {
 
-                linearSlide.setPower(1);
+                intake.setPower(1);
             } else if (gamepad2.a) {
 
-                linearSlide.setPower(-1);
+                intake.setPower(-1);
             } else if (gamepad2.x) {
 
-                linearSlide.setPower(0);
+                intake.setPower(0);
 
             }
 
