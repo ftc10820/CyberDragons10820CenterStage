@@ -2,9 +2,11 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 
 @TeleOp
 public class CenterStageTeleOp extends LinearOpMode {
@@ -14,15 +16,16 @@ public class CenterStageTeleOp extends LinearOpMode {
     public DcMotorEx backLeft;
     public DcMotorEx backRight;
 
+    public TouchSensor touchSensor;
     public DcMotorEx crane;
-
     public Servo indexer;
     public Servo intakeLeft;
     public Servo intakeRight;
     public Servo craneAngle;
     public Servo ramp;
-
     double speedVal = 1.0;
+
+    boolean isTouched = false;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -44,12 +47,24 @@ public class CenterStageTeleOp extends LinearOpMode {
             double frontRightPower = (y - x - rx) / denominator;
             double backRightPower = (y + x - rx) / denominator;
 
+
+
             frontLeft.setPower(frontLeftPower * speedVal);
             backLeft.setPower(backLeftPower * speedVal);
             frontRight.setPower(frontRightPower * speedVal);
             backRight.setPower(backRightPower * speedVal);
-
-            crane.setPower(gamepad2.left_stick_y);
+            telemetry.addData("Is Pressed", touchSensor.isPressed());
+            telemetry.update();
+            //Sees if the controller is going backwards and if the touch sensor is being touched and the disables it from moving backwards
+            if (touchSensor.isPressed()){
+                isTouched = true;
+                crane.setPower(0);
+            } else if (gamepad2.left_stick_y < 0) {
+                isTouched = false;
+            }
+            if(isTouched == false) {
+                crane.setPower(gamepad2.left_stick_y);
+            }
 
             if (gamepad2.y) {
 
@@ -62,6 +77,26 @@ public class CenterStageTeleOp extends LinearOpMode {
             } else if (gamepad2.x) {
 
                 craneAngle.setPosition(0.5);
+
+            }
+
+            if (gamepad2.dpad_down) {
+                frontLeft.setPower(-.5);
+                backLeft.setPower(-.5);
+                frontRight.setPower(-.5);
+                backRight.setPower(-.5);
+
+                sleep(500);
+
+                frontLeft.setPower(0);
+                backLeft.setPower(0);
+                frontRight.setPower(0);
+                backRight.setPower(0);
+
+                craneAngle.setPosition(0);
+                crane.setPower(1);
+                while(!touchSensor.isPressed()){}
+                crane.setPower(0);
 
             }
 
@@ -83,7 +118,7 @@ public class CenterStageTeleOp extends LinearOpMode {
             if (gamepad1.y) {
 
                 intakeLeft.setPosition(0.2);
-                intakeRight.setPosition(0.8);
+                intakeRight.setPosition(0.9);
 
             } else if (gamepad1.a) {
 
@@ -118,14 +153,14 @@ public class CenterStageTeleOp extends LinearOpMode {
                 sleep(500);
 
                 intakeLeft.setPosition(0);
-                intakeRight.setPosition(0.8);
+                intakeRight.setPosition(0.9);
                 sleep(500);
 
                 indexer.setPosition(1);
                 sleep(1000);
 
                 ramp.setPosition(0.3);
-                indexer.setPosition(0.3);
+                indexer.setPosition(0.25);
                 intakeLeft.setPosition(1);
                 intakeRight.setPosition(0.1);
             }
@@ -155,7 +190,10 @@ public class CenterStageTeleOp extends LinearOpMode {
         frontRight.setDirection(DcMotorEx.Direction.REVERSE);
         backRight.setDirection(DcMotorEx.Direction.REVERSE);
 
-
+        frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         //crane motor
         crane = hardwareMap.get(DcMotorEx.class, "Crane");
@@ -167,11 +205,14 @@ public class CenterStageTeleOp extends LinearOpMode {
         craneAngle = hardwareMap.get(Servo.class, "CraneAngle");
         ramp = hardwareMap.get(Servo.class, "Ramp");
 
+
         ramp.setPosition(0.3);
-        indexer.setPosition(0.3);
+        indexer.setPosition(0.25);
         intakeLeft.setPosition(1);
         intakeRight.setPosition(0.1);
 
+
+        touchSensor = hardwareMap.get(TouchSensor.class, "Touch");
 
 
 
