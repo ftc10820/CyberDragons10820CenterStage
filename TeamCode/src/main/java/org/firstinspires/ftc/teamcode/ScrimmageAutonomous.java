@@ -95,11 +95,11 @@ public class ScrimmageAutonomous extends LinearOpMode {
 
             } else {
 
-                moveBackward(600, 0.75);
+                moveBackward(700, 0.75);
                 sleep(1000) ;
                 turnLeft(500, 1.0);
                 sleep(1000) ;
-                moveForward(100, 0.75);
+                moveForward(200, 0.75);
                 sleep(1000) ;
 
                 intakeLeft.setPosition(1);
@@ -110,16 +110,16 @@ public class ScrimmageAutonomous extends LinearOpMode {
                 turnRight(500, 1.0);
                 sleep(1000) ;
 
-                moveBackward(400, 0.75);
+                moveBackward(600, 0.75);
                 sleep(1000) ;
 
-                turnLeft(500, 1.0);
+                turnLeft(400, 1.0);
                 sleep(1000) ;
 
                 moveBackward(2000, 0.75);
                 sleep(1000) ;
 
-                turnRight(500, 1.0);
+                turnRight(400, 1.0);
                 sleep(1000) ;
 
                 moveForward(500, 0.75);
