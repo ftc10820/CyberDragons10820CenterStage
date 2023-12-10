@@ -54,6 +54,14 @@ public class CenterStageTeleOp extends LinearOpMode {
             backRight.setPower(backRightPower * speedVal);
             telemetry.addData("Is Pressed", touchSensor.isPressed());
             telemetry.update();
+
+            /*
+              Note from Coach Weston:
+              Instead of the complex logic below, I recommend:
+               1. Declare a local variable, cranePower, initializing it to gamepad2.left_stick_y
+               2. If touchSensor is pressed and cranePower is less than 0, set cranePower to 0
+               3. Set crane.setPower to cranePower (don't put this in an if-statement)
+             */
             //Sees if the controller is going backwards and if the touch sensor is being touched and the disables it from moving backwards
             if (touchSensor.isPressed()){
                 isTouched = true;
