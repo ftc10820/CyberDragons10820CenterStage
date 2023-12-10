@@ -31,7 +31,6 @@ public class CenterStageTeleOp extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
 
         initialize();
-
         waitForStart();
 
         while (opModeIsActive()) {
