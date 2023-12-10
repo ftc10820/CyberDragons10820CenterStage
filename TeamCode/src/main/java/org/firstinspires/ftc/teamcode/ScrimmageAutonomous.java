@@ -32,11 +32,15 @@ public class ScrimmageAutonomous extends LinearOpMode {
         initialize();
         vision = new VisionSubsystem(hardwareMap);
         vision.setAlliance("blue");
-        vision.elementDetection(telemetry);
-        telemetry.update();
+
+        while (!isStarted()) {
+            vision.elementDetection(telemetry);
+            vision.returnDistance(telemetry);
+            telemetry.update();
+        }
         zone = vision.zone;
 
-        waitForStart();
+        //waitForStart();
 
         if(opModeIsActive()) {
 
@@ -92,25 +96,49 @@ public class ScrimmageAutonomous extends LinearOpMode {
             } else {
 
                 moveBackward(600, 0.75);
+                sleep(1000) ;
                 turnLeft(500, 1.0);
-                moveForward(200, 0.75);
+                sleep(1000) ;
+                moveForward(100, 0.75);
+                sleep(1000) ;
 
                 intakeLeft.setPosition(1);
-                sleep(500);
+                sleep(1000);
 
-                moveBackward(2100, 0.75);
+                moveBackward(200, 0.75) ;
+                sleep(1000) ;
+                turnRight(500, 1.0);
+                sleep(1000) ;
+
+                moveBackward(400, 0.75);
+                sleep(1000) ;
+
+                turnLeft(500, 1.0);
+                sleep(1000) ;
+
+                moveBackward(2000, 0.75);
+                sleep(1000) ;
+
+                turnRight(500, 1.0);
+                sleep(1000) ;
+
+                moveForward(500, 0.75);
+                sleep(1000) ;
+
+                turnLeft(500, 1.0);
+                sleep(1000) ;
 
                 craneAngle.setPosition(0.5);
                 sleep(500);
 
                 crane.setPower(-1);
-                sleep(4500);
+                sleep(2500);
                 crane.setPower(0);
 
                 crane.setPower(1);
-                sleep(2000);
-                craneAngle.setPosition(0);
-                sleep(2500);
+                sleep(1000);
+                //craneAngle.setPosition(0);
+                //sleep(1000);
                 crane.setPower(0);
             }
 
