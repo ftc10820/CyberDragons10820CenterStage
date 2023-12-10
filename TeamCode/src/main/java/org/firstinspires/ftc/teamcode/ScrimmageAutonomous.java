@@ -95,13 +95,17 @@ public class ScrimmageAutonomous extends LinearOpMode {
 
             } else {
 
+                //Moves backwards towards zone
                 moveBackward(700, 0.75);
                 sleep(1000) ;
+                //Turns left
                 turnLeft(500, 1.0);
                 sleep(1000) ;
+                //Moves forward a little bit
                 moveForward(200, 0.75);
                 sleep(1000) ;
 
+                //Drops off mosaic
                 intakeLeft.setPosition(1);
                 sleep(1000);
 
