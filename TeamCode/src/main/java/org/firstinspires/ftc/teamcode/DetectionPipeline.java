@@ -54,6 +54,16 @@ public class DetectionPipeline extends OpenCvPipeline {
         //zone1 = input.submat(new Rect(0, 180, 230, 115));
         //zone2 = input.submat(new Rect(285, 180, 230, 115));
         //zone3 = input.submat(new Rect(570, 180, 230, 115));
+        /*
+         * Note from Coach Weston:
+         * Please change the last parameter (height) on the four submat calls below to 448.
+         * The reason it errors is due to the nature of Mat. Mat is short for matrix, representing
+         * your image data. It will throw an exception when you reference a range outside of the
+         * definition of your 800 x 448 matrix.
+         *
+         * You may also need to change the second parameter (y) back to 0 based on use cases I
+         * found on google.
+         */
         zone1 = input.submat(new Rect(0, 800, 266, 800));
         zone2 = input.submat(new Rect(266, 800, 266, 800));
         zone3 = input.submat(new Rect(533, 800, 266, 800));
