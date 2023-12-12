@@ -36,9 +36,13 @@ public class ScrimmageAutonomous extends LinearOpMode {
         while (!isStarted()) {
             vision.elementDetection(telemetry);
             vision.returnDistance(telemetry);
+
+
             telemetry.update();
+
         }
         zone = vision.zone;
+
 
         //waitForStart();
 

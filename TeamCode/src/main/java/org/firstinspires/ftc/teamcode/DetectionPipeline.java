@@ -64,9 +64,9 @@ public class DetectionPipeline extends OpenCvPipeline {
          * You may also need to change the second parameter (y) back to 0 based on use cases I
          * found on google.
          */
-        zone1 = input.submat(new Rect(0, 800, 266, 800));
-        zone2 = input.submat(new Rect(266, 800, 266, 800));
-        zone3 = input.submat(new Rect(533, 800, 266, 800));
+        zone1 = input.submat(new Rect(0, 180, 115, 230));
+        zone2 = input.submat(new Rect(285, 80, 230, 115));
+        zone3 = input.submat(new Rect(570, 180, 115, 230));
 
         //Averaging the colors in the zones
         avgColor1 = Core.mean(zone1);
