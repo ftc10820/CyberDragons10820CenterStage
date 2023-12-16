@@ -99,7 +99,7 @@ public class ScrimmageAutonomous extends LinearOpMode {
 
             } else if (zone == 2) {
 
-                moveBackward(600, 0.5);
+                moveBackward(400, 0.5);
                 intakeLeft.setPosition(1);
                 sleep(500);
 
