@@ -8,7 +8,6 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 
-import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
@@ -17,7 +16,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import java.util.List;
 
 @Autonomous
-public class ScrimmageAutonomous extends LinearOpMode {
+public class ScrimmageAutonomousBlueRight extends LinearOpMode {
 
     public DcMotorEx frontLeft;
     public DcMotorEx frontRight;
@@ -64,7 +63,7 @@ public class ScrimmageAutonomous extends LinearOpMode {
         //waitForStart();
 
         if(opModeIsActive()) {
-
+            initAprilTag();
             moveBackward(500,0.75);
             moveBackward(0.1);
             int maxColor = 0;
@@ -83,7 +82,7 @@ public class ScrimmageAutonomous extends LinearOpMode {
 
 
             // code for auto 1
-            if (zone == 1) {
+            /*if (zone == 1) {
 
                 moveForward(250,0.5);
                 turnLeft(425, 1.0);
@@ -99,7 +98,7 @@ public class ScrimmageAutonomous extends LinearOpMode {
 
             } else if (zone == 2) {
 
-                moveBackward(600, 0.5);
+                moveBackward(500, 0.5);
                 intakeLeft.setPosition(1);
                 sleep(500);
 
@@ -116,7 +115,7 @@ public class ScrimmageAutonomous extends LinearOpMode {
                 intakeLeft.setPosition(1);
                 sleep(500);
 
-            }
+            }*/
 
 
             /*
@@ -129,15 +128,6 @@ public class ScrimmageAutonomous extends LinearOpMode {
             stopAllWheels();
 
              */
-
-            // code for auto 2
-            moveBackward(500, 0.5);
-            moveBackward(0.1);
-            while (colorSensor.blue() < 1900) {
-
-            }
-            stopAllWheels();
-            /*
             if (zone == 1) {
 
                 moveBackward(600, 0.75);
@@ -239,8 +229,93 @@ public class ScrimmageAutonomous extends LinearOpMode {
                 //sleep(1000);
                 crane.setPower(0);
             }
+            // code for auto 2
+            moveBackward(600, 0.5);
+            if (zone == 2){
+                moveRight(400, .5);
+            }
+            if (zone == 3) {
+                moveBackward(0.1);
+                while (colorSensor.blue() < 1900) {}
+            }
+            stopAllWheels();
+            if(zone == 2 || zone == 1){
+                List<AprilTagDetection> currentDetections;
+                boolean apirlTagFound = false;
+                do {
+                    currentDetections = aprilTag.getDetections();
+                    for(AprilTagDetection detection : currentDetections){
+                        if(detection.id == zone){
+                            apirlTagFound = true;
+                        }
+                    }
+                    telemetry.addData("X:", getDistanceToAprilTag(zone, true));
+                    telemetry.update();
+                    moveRight(25, .25);
+                    //sleep(50);
 
-             */
+                   /* if (currentDetections.size() > 0 && currentDetections.id){
+                        apirlTagFound = true;
+                    }*/
+                }while(!apirlTagFound);
+                stopAllWheels();
+            }
+            do {
+                telemetry.addData("X:", getDistanceToAprilTag(zone, true));
+                telemetry.update();
+                if(getDistanceToAprilTag(zone, true) != 0){
+                    if(getDistanceToAprilTag(zone, true) > 4){
+                        moveLeft(50, .25);
+                    } else if (getDistanceToAprilTag(zone, true) < 3) {
+                        moveRight(50,.25);
+                    }
+                    else  {
+                        break;
+                    }
+                }
+                //y thirteen
+            }while (getDistanceToAprilTag(zone, true) > 4 || getDistanceToAprilTag(zone, true) < 3);
+
+            do {
+                if(getDistanceToAprilTag(zone, false) != 0){
+                    moveBackward(50, .25);
+                }
+                else {}
+                telemetry.addData("Y:", getDistanceToAprilTag(zone, false));
+                telemetry.update();
+            }while ((getDistanceToAprilTag(zone, false) > 13) && zone == 2);
+            //sleep(50);
+            stopAllWheels();
+            if(zone == 3 || zone == 2){
+                moveBackward(250,.5);
+            }
+            craneAngle.setPosition(.6);
+            sleep(500);
+
+            crane.setPower(-1);
+            sleep(3500);
+            crane.setPower(0);
+            sleep(250);
+            moveForward(250,.5);
+            crane.setPower(1);
+            while(!touchSensor.isPressed()){
+
+            }
+            crane.setPower(0);
+            craneAngle.setPosition(0);
+            moveRight(500,.75);
+            if(zone == 3 || zone == 2){
+                moveRight(500, .75);
+            }
+            if(zone == 3){
+                moveBackward(125,.5);
+            }
+            else {
+                moveBackward(250, .5);
+            }
+
+
+
 
 
 
@@ -459,12 +534,26 @@ public class ScrimmageAutonomous extends LinearOpMode {
 
         // Build the Vision Portal, using the above settings.
         visionPortal = builder.build();
-
+        //Changes resolution (CyberDragons Change)
+        aprilTag.setDecimation(1);
         // Disable or re-enable the aprilTag processor at any time.
         //visionPortal.setProcessorEnabled(aprilTag, true);
 
     }
-
+    private double getDistanceToAprilTag(int zone, boolean findX){
+        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+        for (AprilTagDetection detection : currentDetections) {
+            if(detection.id == zone){
+                if(findX) {
+                    return detection.ftcPose.x;
+                }
+                else {
+                    return detection.ftcPose.y;
+                }
+            }
+        }
+        return 0.0;
+    }
     private void telemetryAprilTag() {
 
         List<AprilTagDetection> currentDetections = aprilTag.getDetections();

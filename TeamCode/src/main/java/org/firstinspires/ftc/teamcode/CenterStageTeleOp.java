@@ -23,6 +23,7 @@ public class CenterStageTeleOp extends LinearOpMode {
     public Servo intakeRight;
     public Servo craneAngle;
     public Servo ramp;
+    public Servo droneLauncher;
     double speedVal = 1.0;
 
     boolean isTouched = false;
@@ -63,11 +64,12 @@ public class CenterStageTeleOp extends LinearOpMode {
                3. Set crane.setPower to cranePower (don't put this in an if-statement)
              */
             //Sees if the controller is going backwards and if the touch sensor is being touched and the disables it from moving backwards
-            if (touchSensor.isPressed()){
+            if (touchSensor.isPressed() && gamepad2.left_stick_y > 0){
                 isTouched = true;
                 crane.setPower(0);
             } else if (gamepad2.left_stick_y < 0) {
                 isTouched = false;
+                crane.setPower(gamepad2.left_stick_y);
             }
             if(isTouched == false) {
                 crane.setPower(gamepad2.left_stick_y);
@@ -86,7 +88,9 @@ public class CenterStageTeleOp extends LinearOpMode {
                 craneAngle.setPosition(0.5);
 
             }
-
+            if(gamepad2.right_trigger > 0){
+                droneLauncher.setPosition(1);
+            }
             if (gamepad2.dpad_down) {
                 frontLeft.setPower(-.5);
                 backLeft.setPower(-.5);
@@ -212,12 +216,13 @@ public class CenterStageTeleOp extends LinearOpMode {
         craneAngle = hardwareMap.get(Servo.class, "CraneAngle");
         ramp = hardwareMap.get(Servo.class, "Ramp");
 
+        droneLauncher = hardwareMap.get(Servo.class, "DroneLauncher");
 
         ramp.setPosition(0.3);
         indexer.setPosition(0.25);
         intakeLeft.setPosition(1);
         intakeRight.setPosition(0.1);
-
+        droneLauncher.setPosition(0);
 
         touchSensor = hardwareMap.get(TouchSensor.class, "Touch");
 
