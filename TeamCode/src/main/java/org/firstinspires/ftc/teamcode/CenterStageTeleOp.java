@@ -163,17 +163,17 @@ public class CenterStageTeleOp extends LinearOpMode {
                 indexer.setPosition(0);
                 sleep(500);
 
-                intakeLeft.setPosition(0);
-                intakeRight.setPosition(0.9);
+                intakeLeft.setPosition(0.3);
+                intakeRight.setPosition(0.65);
                 sleep(500);
+                intakeLeft.setPosition(1);
+                intakeRight.setPosition(0.1);
 
                 indexer.setPosition(1);
                 sleep(1000);
 
                 ramp.setPosition(0.3);
                 indexer.setPosition(0.25);
-                intakeLeft.setPosition(1);
-                intakeRight.setPosition(0.1);
             }
 
 
