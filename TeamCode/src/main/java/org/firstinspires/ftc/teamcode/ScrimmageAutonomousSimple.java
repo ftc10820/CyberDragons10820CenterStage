@@ -16,8 +16,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import java.util.List;
 
 @Autonomous
-
-public class ScrimmageAutonomousRedLeftSimple extends LinearOpMode  {
+public class ScrimmageAutonomousSimple extends LinearOpMode {
 
     public DcMotorEx frontLeft;
     public DcMotorEx frontRight;
@@ -64,17 +63,61 @@ public class ScrimmageAutonomousRedLeftSimple extends LinearOpMode  {
         //waitForStart();
 
         if(opModeIsActive()) {
-            moveLeft(150, 0.75);
-            moveForward(500, 0.75);
-            moveRight(150, 0.75);
-            moveForward(1000,0.75);
+
+            initAprilTag();
+            moveBackward(500,0.75);
+            moveBackward(0.1);
+            int maxColor = 0;
+            while (colorSensor.red() < 1900) {
+
+                if (colorSensor.red() > maxColor) {
+
+                    maxColor = colorSensor.red();
+                }
+
+                telemetry.addData("color value", maxColor);
+                telemetry.update();
+
+            }
             stopAllWheels();
 
-            intakeLeft.setPosition(1);
-            intakeRight.setPosition(0);
-            sleep(2000);
 
-            moveBackward(100, 0.75);
+            // code for auto 1
+            if (zone == 1) {
+
+                moveForward(250,0.5);
+                turnLeft(425, 1.0);
+
+                moveBackward(0.1);
+                while (colorSensor.red() < 1900) {
+
+                }
+                stopAllWheels();
+                moveBackward(500, 0.5);
+                intakeLeft.setPosition(1);
+                sleep(500);
+
+            } else if (zone == 2) {
+
+                moveBackward(500, 0.5);
+                intakeLeft.setPosition(1);
+                sleep(500);
+
+                moveBackward(700, 0.25);
+
+
+                turnLeft(425, 1.0);
+
+            } else {
+
+                moveForward(150, 0.5);
+                turnLeft(425, 1.0);
+                moveForward(250, 0.5);
+                intakeLeft.setPosition(1);
+                sleep(500);
+
+            }
+
         }
 
     }

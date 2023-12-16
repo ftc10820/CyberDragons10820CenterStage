@@ -24,7 +24,7 @@ public class CenterStageTeleOp extends LinearOpMode {
     public Servo craneAngle;
     public Servo ramp;
     public Servo droneLauncher;
-    double speedVal = 1.0;
+    double speedVal = 0.75;
 
     boolean isTouched = false;
 
