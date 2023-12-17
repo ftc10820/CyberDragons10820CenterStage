@@ -18,6 +18,7 @@ import java.util.List;
 @Autonomous
 public class ScrimmageAutonomousSimple extends LinearOpMode {
 
+    // TODO: Replace all but VisionPortal with RobotClass instance
     public DcMotorEx frontLeft;
     public DcMotorEx frontRight;
     public DcMotorEx backLeft;
@@ -122,6 +123,7 @@ public class ScrimmageAutonomousSimple extends LinearOpMode {
 
     }
 
+    // TODO: Refactor initialize() to RobotClass. OpMode.initialize() should be robot = new RobotClass(); robot.initialize();
     public void initialize() {
 
 
@@ -169,6 +171,7 @@ public class ScrimmageAutonomousSimple extends LinearOpMode {
     }
 
 
+    // TODO: Refactor moveBackward(time, speed) to RobotClass and update calls in this OpMode
     // time + speed are parameters for all the movement
     void moveBackward(int time, double speed) throws InterruptedException {
         frontLeft.setPower(speed);
@@ -185,6 +188,7 @@ public class ScrimmageAutonomousSimple extends LinearOpMode {
 
     }
 
+    // TODO: Refactor moveBackward(speed) to RobotClass and update calls in this OpMode
     void moveBackward(double speed) throws InterruptedException {
         frontLeft.setPower(speed);
         frontRight.setPower(speed);
@@ -193,6 +197,7 @@ public class ScrimmageAutonomousSimple extends LinearOpMode {
 
     }
 
+    // TODO: Refactor moveForward(time, speed) to RobotClass and update calls in this OpMode
     void moveForward(int time, double speed) throws InterruptedException {
         frontLeft.setPower(-speed);
         frontRight.setPower(-speed);
@@ -207,6 +212,7 @@ public class ScrimmageAutonomousSimple extends LinearOpMode {
         backRight.setPower(0);
     }
 
+    // TODO: Refactor moveForward(speed) to RobotClass and update calls in this OpMode
     void moveForward(double speed) throws InterruptedException {
         frontLeft.setPower(-speed);
         frontRight.setPower(-speed);
@@ -215,6 +221,7 @@ public class ScrimmageAutonomousSimple extends LinearOpMode {
 
     }
 
+    // TODO: Refactor moveLeft(time, speed) to RobotClass and update calls in this OpMode
     void moveLeft(int time, double speed) throws InterruptedException {
         frontLeft.setPower(speed);
         frontRight.setPower(-speed);
@@ -230,6 +237,7 @@ public class ScrimmageAutonomousSimple extends LinearOpMode {
 
     }
 
+    // TODO: Refactor moveRight(time, speed) to RobotClass and update calls in this OpMode
     void moveRight(int time, double speed) throws InterruptedException {
         frontLeft.setPower(-speed);
         frontRight.setPower(speed);
@@ -245,6 +253,7 @@ public class ScrimmageAutonomousSimple extends LinearOpMode {
     }
 
 
+    // TODO: Refactor turnRight(time, speed) to RobotClass and update calls in this OpMode
     void turnRight(int time, double speed) throws InterruptedException {
         frontLeft.setPower(-speed);
         frontRight.setPower(speed);
@@ -260,6 +269,7 @@ public class ScrimmageAutonomousSimple extends LinearOpMode {
 
     }
 
+    // TODO: Refactor turnLeft(time, speed) to RobotClass and update calls in this OpMode
     void turnLeft(int time, double speed) throws InterruptedException {
         frontLeft.setPower(speed);
         frontRight.setPower(-speed);
@@ -275,6 +285,7 @@ public class ScrimmageAutonomousSimple extends LinearOpMode {
 
     }
 
+    // TODO: Refactor stopAllWheels() to RobotClass and update calls in this OpMode
     void stopAllWheels() throws InterruptedException {
 
         frontLeft.setPower(0);
@@ -284,6 +295,7 @@ public class ScrimmageAutonomousSimple extends LinearOpMode {
 
     }
 
+    // TODO: Refactor initAprilTag() to RobotClass and update calls in this OpMode
     private void initAprilTag() {
 
         // Create the AprilTag processor.
