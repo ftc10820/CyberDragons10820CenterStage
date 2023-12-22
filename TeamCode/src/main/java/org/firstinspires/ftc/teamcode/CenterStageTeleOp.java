@@ -144,18 +144,16 @@ public class CenterStageTeleOp extends LinearOpMode {
 
 
 
-            /*
-            if (gamepad1.y) {
+            if (gamepad1.dpad_up) {
 
-                ramp.setPosition(0.35);
+                ramp.setPosition(0.3);
 
-            } else if (gamepad1.a) {
+            } else if (gamepad1.dpad_down) {
 
                 ramp.setPosition(0.45);
 
             }
 
-             */
 
             if (gamepad1.x) {
 
