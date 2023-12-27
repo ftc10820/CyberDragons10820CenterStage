@@ -1,24 +1,14 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.checkerframework.checker.index.qual.LTEqLengthOf;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 
-import org.firstinspires.ftc.teamcode.DetectionPipeline;
-import org.tensorflow.lite.task.vision.detector.Detection;
-
-import java.util.ArrayList;
-import java.util.List;
-
-public class VisionSubsystem{
+public class PixelVisionSubsystem {
     OpenCvCamera camera;
     DetectionPipeline detectionPipeline;
     int camW = 800;
@@ -26,7 +16,7 @@ public class VisionSubsystem{
 
     int zone = 1;
 
-    public VisionSubsystem(HardwareMap hardwareMap){
+    public PixelVisionSubsystem(HardwareMap hardwareMap){
         camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"));
         detectionPipeline = new DetectionPipeline();
 
@@ -68,3 +58,4 @@ public class VisionSubsystem{
     }
 
 }
+

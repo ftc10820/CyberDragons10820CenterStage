@@ -2,11 +2,14 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.TouchSensor;
+
+import org.firstinspires.ftc.vision.VisionPortal;
 
 @TeleOp
 public class CenterStageTeleOp extends LinearOpMode {
@@ -17,6 +20,8 @@ public class CenterStageTeleOp extends LinearOpMode {
     public DcMotorEx backRight;
 
     public TouchSensor touchSensor;
+    private ColorSensor pixelDetectorRight;
+    private ColorSensor pixelDetectorLeft;
     public DcMotorEx crane;
     public Servo indexer;
     public Servo intakeLeft;
@@ -25,6 +30,8 @@ public class CenterStageTeleOp extends LinearOpMode {
     public Servo ramp;
     public Servo droneLauncher;
     double speedVal = 0.75;
+    PixelVisionSubsystem pixelVision;
+    int zone = 1;
 
     boolean isTouched = false;
 
@@ -32,6 +39,18 @@ public class CenterStageTeleOp extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
 
         initialize();
+        pixelVision = new PixelVisionSubsystem(hardwareMap);
+        pixelVision.setAlliance("blue");
+
+
+        while (!isStarted()) {
+            zone = pixelVision.elementDetection(telemetry);
+            pixelVision.returnDistance(telemetry);
+
+            telemetry.update();
+        }
+        zone = pixelVision.zone;
+
         waitForStart();
 
         while (opModeIsActive()) {
@@ -54,6 +73,8 @@ public class CenterStageTeleOp extends LinearOpMode {
             frontRight.setPower(frontRightPower * speedVal);
             backRight.setPower(backRightPower * speedVal);
             telemetry.addData("Is Pressed", touchSensor.isPressed());
+            telemetry.addData("Left Pixel Detector", "Red: " + pixelDetectorLeft.red() + ", Blue: " + pixelDetectorLeft.blue() + ", Green:" + pixelDetectorLeft.green() + ", alpha: " + pixelDetectorLeft.alpha());
+            telemetry.addData("Right Pixel Detector", "Red: " + pixelDetectorRight.red() + ", Blue: " + pixelDetectorRight.blue() + ", Green:" + pixelDetectorRight.green() + ", alpha: " + pixelDetectorRight.alpha());
             telemetry.update();
 
             /*
@@ -223,6 +244,10 @@ public class CenterStageTeleOp extends LinearOpMode {
         droneLauncher.setPosition(0);
 
         touchSensor = hardwareMap.get(TouchSensor.class, "Touch");
+
+        pixelDetectorLeft = hardwareMap.get(ColorSensor.class, "PixelDetectorLeft");
+        pixelDetectorRight = hardwareMap.get(ColorSensor.class, "PixelDetectorRight");
+
 
 
 

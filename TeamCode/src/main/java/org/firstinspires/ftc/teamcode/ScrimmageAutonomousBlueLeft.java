@@ -51,12 +51,10 @@ public class ScrimmageAutonomousBlueLeft extends LinearOpMode {
 
 
         while (!isStarted()) {
-            vision.elementDetection(telemetry);
+            zone = vision.elementDetection(telemetry);
             vision.returnDistance(telemetry);
 
-
             telemetry.update();
-
         }
         zone = vision.zone;
 

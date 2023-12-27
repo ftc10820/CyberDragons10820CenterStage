@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
@@ -7,8 +8,11 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
@@ -16,109 +20,68 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import java.util.List;
 
 @Autonomous
-public class ScrimmageAutonomousSimple extends LinearOpMode {
+public class InitRobotTest extends LinearOpMode {
 
-    // TODO: Replace all but VisionPortal with RobotClass instance
+    // drive train motors
     public DcMotorEx frontLeft;
     public DcMotorEx frontRight;
     public DcMotorEx backLeft;
     public DcMotorEx backRight;
 
+    // crane linear slide and lifter
     public DcMotorEx crane;
+    public Servo craneAngle;
+
+    // the rotating platform for intake
     public Servo indexer;
+
+    // The servo used for intake (left and right - with the robot's perspective)
     public Servo intakeLeft;
     public Servo intakeRight;
-    public Servo craneAngle;
+
+    // the short ramp used for the intake mechanism
     public Servo ramp;
 
-    public ColorSensor colorSensor;
-    public TouchSensor touchSensor;
+    // the drone launcher
+    public Servo droneLauncher;
 
-    public AprilTagProcessor aprilTag;
+    // sensors used for pixel intake
+    private ColorSensor pixelDetectorRight;
+    private ColorSensor pixelDetectorLeft;
 
-    public VisionPortal visionPortal;
+    // distance sensor on the bucket to detect when bucket is close to backdrop
+    private DistanceSensor distanceBucket;
 
-    int zone = 1;
+    // touch sensor used with linear slide
+    public TouchSensor touchCrane;
+    // Color sensor at the back of the robot used for detecting lines on the field
+    public ColorSensor colorFieldLine;
 
-    VisionSubsystem vision;
+    // helper variables
+    ElapsedTime eTime1 = new ElapsedTime() ;
+    ElapsedTime eTime2 = new ElapsedTime() ;
+
 
     @Override
     public void runOpMode() throws InterruptedException {
 
         initialize();
-        vision = new VisionSubsystem(hardwareMap);
-        vision.setAlliance("red");
 
-
-        while (!isStarted()) {
-            vision.elementDetection(telemetry);
-            vision.returnDistance(telemetry);
-
-
-            telemetry.update();
-
-        }
-        zone = vision.zone;
-
-
-        //waitForStart();
+        waitForStart();
 
         if(opModeIsActive()) {
+            extendCraneUseSensor(0.5, 10000, 5.0);
+            sleep(2000) ;
+            retractCraneHome(0.5, 10000);
+            sleep(2000) ;
 
-            initAprilTag();
-            moveBackward(500,0.75);
-            moveBackward(0.1);
-            int maxColor = 0;
-            while (colorSensor.red() < 1900) {
+            eTime1.reset();
 
-                if (colorSensor.red() > maxColor) {
-
-                    maxColor = colorSensor.red();
-                }
-
-                telemetry.addData("color value", maxColor);
+            while (eTime1.milliseconds() < 20000) {
+                telemetry.addData("Detected Pixel left:", "val: " + getPixelDetectionLeftVal() + " " + isPixelDetectedLeft()) ;
+                telemetry.addData("Detected Pixel right:", "val: " + getPixelDetectionRightVal() + " " + isPixelDetectedRight()) ;
                 telemetry.update();
-
             }
-            stopAllWheels();
-
-
-            // code for auto 1
-            if (zone == 1) {
-
-                moveForward(250,0.5);
-                turnLeft(425, 1.0);
-
-                moveBackward(0.1);
-                while (colorSensor.red() < 1900) {
-
-                }
-                stopAllWheels();
-                moveBackward(500, 0.5);
-                intakeLeft.setPosition(1);
-                sleep(500);
-
-            } else if (zone == 2) {
-
-                moveBackward(500, 0.5);
-                intakeLeft.setPosition(1);
-                sleep(500);
-
-                moveBackward(700, 0.25);
-
-
-                turnLeft(425, 1.0);
-
-            } else {
-
-                moveForward(150, 0.5);
-                turnLeft(425, 1.0);
-                moveForward(250, 0.5);
-                intakeLeft.setPosition(1);
-                sleep(500);
-
-            }
-
         }
 
     }
@@ -148,6 +111,8 @@ public class ScrimmageAutonomousSimple extends LinearOpMode {
 
         //crane motor
         crane = hardwareMap.get(DcMotorEx.class, "Crane");
+        crane.setDirection(DcMotorEx.Direction.REVERSE);
+        crane.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         //servos
         indexer = hardwareMap.get(Servo.class, "Indexer");
@@ -155,19 +120,25 @@ public class ScrimmageAutonomousSimple extends LinearOpMode {
         intakeRight = hardwareMap.get(Servo.class, "IntakeRight");
         craneAngle = hardwareMap.get(Servo.class, "CraneAngle");
         ramp = hardwareMap.get(Servo.class, "Ramp");
+        droneLauncher = hardwareMap.get(Servo.class, "DroneLauncher");
 
 
+        /*
         ramp.setPosition(0.3);
         indexer.setPosition(0.25);
         intakeLeft.setPosition(0.1);
         intakeRight.setPosition(0.3);
+         */
 
 
-        touchSensor = hardwareMap.get(TouchSensor.class, "Touch");
-        colorSensor = hardwareMap.get(ColorSensor.class, "Color");
+        //sensors
+        touchCrane = hardwareMap.get(TouchSensor.class, "Touch");
+        colorFieldLine = hardwareMap.get(ColorSensor.class, "Color");
 
+        pixelDetectorLeft = hardwareMap.get(ColorSensor.class, "PixelDetectorLeft");
+        pixelDetectorRight = hardwareMap.get(ColorSensor.class, "PixelDetectorRight");
 
-
+        distanceBucket = hardwareMap.get(DistanceSensor.class, "DistanceBucket") ;
     }
 
 
@@ -295,95 +266,137 @@ public class ScrimmageAutonomousSimple extends LinearOpMode {
 
     }
 
-    // TODO: Refactor initAprilTag() to RobotClass and update calls in this OpMode
-    private void initAprilTag() {
-
-        // Create the AprilTag processor.
-        aprilTag = new AprilTagProcessor.Builder()
-                //.setDrawAxes(false)
-                //.setDrawCubeProjection(false)
-                //.setDrawTagOutline(true)
-                //.setTagFamily(AprilTagProcessor.TagFamily.TAG_36h11)
-                //.setTagLibrary(AprilTagGameDatabase.getCenterStageTagLibrary())
-                //.setOutputUnits(DistanceUnit.INCH, AngleUnit.DEGREES)
-
-                // == CAMERA CALIBRATION ==
-                // If you do not manually specify calibration parameters, the SDK will attempt
-                // to load a predefined calibration for your camera.
-                //.setLensIntrinsics(578.272, 578.272, 402.145, 221.506)
-
-                // ... these parameters are fx, fy, cx, cy.
-
-                .build();
-
-        // Create the vision portal by using a builder.
-        VisionPortal.Builder builder = new VisionPortal.Builder();
-
-        // Set the camera (webcam vs. built-in RC phone camera).
-        builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"));
-
-
-        // Choose a camera resolution. Not all cameras support all resolutions.
-        //builder.setCameraResolution(new Size(640, 480));
-
-        // Enable the RC preview (LiveView).  Set "false" to omit camera monitoring.
-        //builder.enableCameraMonitoring(true);
-
-        // Set the stream format; MJPEG uses less bandwidth than default YUY2.
-        //builder.setStreamFormat(VisionPortal.StreamFormat.YUY2);
-
-        // Choose whether or not LiveView stops if no processors are enabled.
-        // If set "true", monitor shows solid orange screen if no processors enabled.
-        // If set "false", monitor shows camera view without annotations.
-        //builder.setAutoStopLiveView(false);
-
-        // Set and enable the processor.
-        builder.addProcessor(aprilTag);
-
-        // Build the Vision Portal, using the above settings.
-        visionPortal = builder.build();
-        //Changes resolution (CyberDragons Change)
-        aprilTag.setDecimation(1);
-        // Disable or re-enable the aprilTag processor at any time.
-        //visionPortal.setProcessorEnabled(aprilTag, true);
-
+    void openLeftIntake() {
+        intakeLeft.setPosition(1.0);
     }
-    private double getDistanceToAprilTag(int zone, boolean findX){
-        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
-        for (AprilTagDetection detection : currentDetections) {
-            if(detection.id == zone){
-                if(findX) {
-                    return detection.ftcPose.x;
-                }
-                else {
-                    return detection.ftcPose.y;
-                }
-            }
+
+    void closeLeftIntake() {
+        intakeLeft.setPosition(0.2);
+    }
+
+    void openRightIntake() {
+        intakeRight.setPosition(0.32);
+    }
+
+    void closeRightIntake() {
+        intakeRight.setPosition(0.8);
+    }
+
+    void lowerRamp() {
+        ramp.setPosition(0.4);
+        // dont press too hard on mat, otherwise it lifts up the robot and the intake may not work properly
+    }
+
+    void liftRamp() {
+        ramp.setPosition(0.3);
+    }
+
+    void readyIntakePlatform() {
+        // get it lower to the ground to get it ready for sweep by intake servo
+        indexer.setPosition(0);
+    }
+
+    void initIntakePlatform() {
+        // keep it slightly up so it doesnt drag on the floor
+        indexer.setPosition(0.25);
+    }
+
+    void liftIntakePlatform() {
+        // rotate it so it gets to the bucket on the linear slide/crane
+        indexer.setPosition(1.0);
+    }
+
+    void extendCrane(double speed) {
+        crane.setPower(speed);
+    }
+    // see overloaded function ; use appropriately
+    void extendCraneUseSensor(double speed) {
+        // extend crane till a timeout value or till the sensor detects closeness to backdrop
+        final int EXTEND_TIMEOUT = 2000 ; // timeout depends on the speed
+        final double BACKDROP_DIST_IN_CM = 8.0 ;
+        eTime1.reset();
+        crane.setPower(speed);
+        while((distanceBucket.getDistance(DistanceUnit.CM) > BACKDROP_DIST_IN_CM) && (eTime1.milliseconds() < EXTEND_TIMEOUT)) {
+
         }
-        return 0.0;
+        stopCrane();
     }
-    private void telemetryAprilTag() {
+    void extendCraneUseSensor(double speed, int timeout_milli, double backdrop_dist_cm) {
+        // extend crane till given timeout value or till the sensor detects proximity to backdrop based on given distance
+        // NOTE: timeout depends on the speed
+        eTime1.reset();
+        crane.setPower(speed);
+        while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (eTime1.milliseconds() < timeout_milli)) {
 
-        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
-        telemetry.addData("# AprilTags Detected", currentDetections.size());
-
-        // Step through the list of detections and display info for each one.
-        for (AprilTagDetection detection : currentDetections) {
-            if (detection.metadata != null) {
-                telemetry.addLine(String.format("\n==== (ID %d) %s", detection.id, detection.metadata.name));
-                telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f  (inch)", detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.z));
-                telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f  (deg)", detection.ftcPose.pitch, detection.ftcPose.roll, detection.ftcPose.yaw));
-                telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f  (inch, deg, deg)", detection.ftcPose.range, detection.ftcPose.bearing, detection.ftcPose.elevation));
-            } else {
-                telemetry.addLine(String.format("\n==== (ID %d) Unknown", detection.id));
-                telemetry.addLine(String.format("Center %6.0f %6.0f   (pixels)", detection.center.x, detection.center.y));
-            }
-        }   // end for() loop
-
-        // Add "key" information to telemetry
-        telemetry.addLine("\nkey:\nXYZ = X (Right), Y (Forward), Z (Up) dist.");
-        telemetry.addLine("PRY = Pitch, Roll & Yaw (XYZ Rotation)");
-        telemetry.addLine("RBE = Range, Bearing & Elevation");
-
+        }
+        stopCrane();
     }
+    void retractCrane(double speed) {
+        crane.setPower(-1.0*speed);
+    }
+
+    void stopCrane() {
+        crane.setPower(0.0);
+    }
+
+    // see overloaded function ; use appropriately
+    void retractCraneHome(double speed) {
+        // retract crane till it hits sensor or a certain timeout val
+        // NOTE: speed should determine timeout value
+        final int RETRACT_TIMEOUT = 2000 ;
+        eTime1.reset();
+        retractCrane(speed);
+        while((!touchCrane.isPressed()) && (eTime1.milliseconds() < RETRACT_TIMEOUT)) {
+
+        }
+        stopCrane();
+    }
+
+    void retractCraneHome(double speed, int timeout_milli) {
+        // retract crane till it hits sensor or given timeout val
+        eTime1.reset();
+        retractCrane(speed);
+        while((!touchCrane.isPressed()) && (eTime1.milliseconds() < timeout_milli)) {
+
+        }
+        stopCrane();
+    }
+    void positionCraneLow() {
+        craneAngle.setPosition(0.25);
+    }
+    void positionCraneMedium() {
+        craneAngle.setPosition(0.5);
+    }
+    void positionCraneHigh() {
+        craneAngle.setPosition(1.0);
+    }
+
+    void positionCraneBase() {
+        craneAngle.setPosition(0);
+    }
+
+    void initDroneLauncher() {
+        droneLauncher.setPosition(0);
+    }
+    void releaseDrone() {
+        droneLauncher.setPosition(1);
+    }
+
+    final int PIXEL_DETECTION_THRESHOLD = 100 ;
+    // Pixel detection uses alpha; could use others but this seems the most straightforward
+    // threshold needs to be calibrated at the match site
+    boolean isPixelDetectedLeft() {
+        return (pixelDetectorLeft.alpha() > PIXEL_DETECTION_THRESHOLD) ;
+    }
+    int getPixelDetectionLeftVal() {
+        return pixelDetectorLeft.alpha() ;
+    }
+
+    boolean isPixelDetectedRight() {
+        return (pixelDetectorRight.alpha() > PIXEL_DETECTION_THRESHOLD) ;
+    }
+    int getPixelDetectionRightVal() {
+        return pixelDetectorRight.alpha() ;
+    }
+
 }
