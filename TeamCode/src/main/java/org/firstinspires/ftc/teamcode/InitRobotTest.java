@@ -12,12 +12,16 @@ import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.vision.VisionPortal;
+import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
+
 
 @Autonomous
 public class InitRobotTest extends LinearOpMode {
@@ -57,6 +61,10 @@ public class InitRobotTest extends LinearOpMode {
     // Color sensor at the back of the robot used for detecting lines on the field
     public ColorSensor colorFieldLine;
 
+    // Vision portal and vision processing pipeline
+    private VisionPortal visionPortal;
+    private TfodProcessor tfod;
+
     // helper variables
     ElapsedTime eTime1 = new ElapsedTime() ;
     ElapsedTime eTime2 = new ElapsedTime() ;
@@ -67,20 +75,17 @@ public class InitRobotTest extends LinearOpMode {
 
         initialize();
 
+        initializeVision() ;
+
         waitForStart();
 
         if(opModeIsActive()) {
-            extendCraneUseSensor(0.5, 10000, 5.0);
-            sleep(2000) ;
-            retractCraneHome(0.5, 10000);
-            sleep(2000) ;
-
             eTime1.reset();
 
             while (eTime1.milliseconds() < 20000) {
-                telemetry.addData("Detected Pixel left:", "val: " + getPixelDetectionLeftVal() + " " + isPixelDetectedLeft()) ;
-                telemetry.addData("Detected Pixel right:", "val: " + getPixelDetectionRightVal() + " " + isPixelDetectedRight()) ;
+                telemetryTfod();
                 telemetry.update();
+                sleep(100);
             }
         }
 
@@ -141,6 +146,61 @@ public class InitRobotTest extends LinearOpMode {
         distanceBucket = hardwareMap.get(DistanceSensor.class, "DistanceBucket") ;
     }
 
+    void initializeVision() {
+        final String TFOD_MODEL_ASSET = "CenterStage.tflite";
+        final String[] LABELS = {
+                "Pixel",
+        };
+
+        // Create the TensorFlow processor by using a builder.
+        tfod = new TfodProcessor.Builder()
+
+                // Use setModelAssetName() if the TF Model is built in as an asset.
+                // Use setModelFileName() if you have downloaded a custom team model to the Robot Controller.
+                .setModelAssetName(TFOD_MODEL_ASSET)
+                //.setModelFileName(TFOD_MODEL_FILE)
+
+                .setModelLabels(LABELS)
+                //.setIsModelTensorFlow2(true)
+                //.setIsModelQuantized(true)
+                //.setModelInputSize(300)
+                //.setModelAspectRatio(16.0 / 9.0)
+
+                .build();
+
+        // Create the vision portal by using a builder.
+        VisionPortal.Builder builder = new VisionPortal.Builder();
+
+        builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 2"));
+
+        // Choose a camera resolution. Not all cameras support all resolutions.
+        //builder.setCameraResolution(new Size(640, 480));
+
+        // Enable the RC preview (LiveView).  Set "false" to omit camera monitoring.
+        //builder.enableCameraMonitoring(true);
+
+        // Set the stream format; MJPEG uses less bandwidth than default YUY2.
+        //builder.setStreamFormat(VisionPortal.StreamFormat.YUY2);
+
+        // Choose whether or not LiveView stops if no processors are enabled.
+        // If set "true", monitor shows solid orange screen if no processors enabled.
+        // If set "false", monitor shows camera view without annotations.
+        //builder.setAutoStopLiveView(false);
+
+        // Set and enable the processor.
+        builder.addProcessor(tfod);
+
+        // Build the Vision Portal, using the above settings.
+        visionPortal = builder.build();
+
+        // Set confidence threshold for TFOD recognitions, at any time.
+        //tfod.setMinResultConfidence(0.75f);
+
+        // Disable or re-enable the TFOD processor at any time.
+        //visionPortal.setProcessorEnabled(tfod, true);
+
+    }
+
 
     // TODO: Refactor moveBackward(time, speed) to RobotClass and update calls in this OpMode
     // time + speed are parameters for all the movement
@@ -156,6 +216,7 @@ public class InitRobotTest extends LinearOpMode {
         frontRight.setPower(0);
         backLeft.setPower(0);
         backRight.setPower(0);
+
 
     }
 
@@ -399,4 +460,12 @@ public class InitRobotTest extends LinearOpMode {
         return pixelDetectorRight.alpha() ;
     }
 
+    void telemetryTfod() {
+        List<Recognition> currentRecognitions = tfod.getRecognitions() ;
+        telemetry.addData("# Objects detected", currentRecognitions.size()) ;
+
+        for (Recognition recognition : currentRecognitions) {
+            telemetry.addData("Pixel ", recognition.getLabel() + " Conf. " + recognition.getConfidence() + " Width " + recognition.getWidth() + " Height " + recognition.getHeight());
+        }
+    }
 }
