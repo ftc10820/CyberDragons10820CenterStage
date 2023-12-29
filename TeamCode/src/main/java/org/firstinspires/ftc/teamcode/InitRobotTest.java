@@ -6,13 +6,17 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.vision.VisionPortal;
@@ -21,6 +25,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 
 @Autonomous
@@ -35,6 +40,9 @@ public class InitRobotTest extends LinearOpMode {
     // crane linear slide and lifter
     public DcMotorEx crane;
     public Servo craneAngle;
+
+    // suspension motor
+    public DcMotorEx suspension;
 
     // the rotating platform for intake
     public Servo indexer;
@@ -61,13 +69,30 @@ public class InitRobotTest extends LinearOpMode {
     // Color sensor at the back of the robot used for detecting lines on the field
     public ColorSensor colorFieldLine;
 
-    // Vision portal and vision processing pipeline
+    // Vision portal and vision processing pipelines
     private VisionPortal visionPortal;
     private TfodProcessor tfod;
+    private AprilTagProcessor aprilTag;
 
     // helper variables
     ElapsedTime eTime1 = new ElapsedTime() ;
     ElapsedTime eTime2 = new ElapsedTime() ;
+
+    // variables specific to AprilTags
+    final double DESIRED_DISTANCE = 12.0; //  this is how close the camera should get to the target (inches)
+
+    //  Set the GAIN constants to control the relationship between the measured position error, and how much power is
+    //  applied to the drive motors to correct the error.
+    //  Drive = Error * Gain    Make these values smaller for smoother control, or larger for a more aggressive response.
+    final double SPEED_GAIN  =  0.02  ;   //  Forward Speed Control "Gain". eg: Ramp up to 50% power at a 25 inch error.   (0.50 / 25.0)
+    final double STRAFE_GAIN =  0.015 ;   //  Strafe Speed Control "Gain".  eg: Ramp up to 25% power at a 25 degree Yaw error.   (0.25 / 25.0)
+    final double TURN_GAIN   =  0.01  ;   //  Turn Control "Gain".  eg: Ramp up to 25% power at a 25 degree error. (0.25 / 25.0)
+
+    final double MAX_AUTO_SPEED = 0.5;   //  Clip the approach speed to this max value (adjust for your robot)
+    final double MAX_AUTO_STRAFE= 0.5;   //  Clip the approach speed to this max value (adjust for your robot)
+    final double MAX_AUTO_TURN  = 0.3;   //  Clip the turn speed to this max value (adjust for your robot)
+    private static final int DESIRED_TAG_ID = 2;     // Choose the tag you want to approach or set to -1 for ANY tag.
+    private AprilTagDetection desiredTag = null;     // Used to hold the data for a detected AprilTag
 
 
     @Override
@@ -75,18 +100,150 @@ public class InitRobotTest extends LinearOpMode {
 
         initialize();
 
-        initializeVision() ;
+        //initAprilTag(); ;
+
+        // initialize the ramp, bucket platform and intake
+
+        liftRamp();
+        initIntakePlatform();
+        openRightIntake();
+        openLeftIntake();
 
         waitForStart();
 
         if(opModeIsActive()) {
-            eTime1.reset();
+            /*
+            suspension.setPower(1.0);
+            sleep(1000) ;
+            suspension.setPower(0.0);
+             */
 
-            while (eTime1.milliseconds() < 20000) {
-                telemetryTfod();
-                telemetry.update();
-                sleep(100);
+            /*
+            lowerRamp();
+            readyIntakePlatform();
+            sleep (1000) ;
+            closeRightIntake();
+            closeLeftIntake();
+            sleep(3000) ;
+            openRightIntake();
+            openLeftIntake();
+            sleep(2000) ;
+            liftRamp();
+            initIntakePlatform();
+            sleep(2000) ;
+
+             */
+
+            //moveForward(0.8);
+
+            eTime1.reset();
+            while (eTime1.milliseconds() < 50000) {
+                telemetry.addData("Left Pixel: ", getPixelDetectionLeftVal() ) ;
+                telemetry.addData("Right Pixel ", getPixelDetectionRightVal()) ;
+                telemetry.update() ;
+                if (isPixelDetectedLeft() && isPixelDetectedRight()) {
+                    stopAllWheels();
+                    // lower ramp
+                    lowerRamp();
+                    readyIntakePlatform();
+                    // close intake
+                    closeRightIntake();
+                    closeLeftIntake();
+                    sleep(2000) ;
+                    // raise the ramp again
+                    openRightIntake();
+                    openLeftIntake();
+                    sleep(2000) ;
+                    liftRamp();
+                    initIntakePlatform();
+                    sleep(2000) ;
+                    break ;
+                }
             }
+            stopAllWheels();
+            sleep(10000) ;
+
+             
+
+            /*
+            positionCraneHigh();
+            extendCraneUseSensor(0.8,10000, 12.5, 2500);
+            sleep(1000);
+            retractCraneHome(0.8, 1500);
+            sleep(1000);
+            positionCraneBase();
+            sleep(1000);
+            retractCraneHome(0.8, 10000);
+            sleep(1000);
+             */
+
+            /*
+            while(opModeIsActive()) {
+                telemetry.addData("Distance val:", distanceBucket.getDistance(DistanceUnit.CM) + " cm") ;
+                telemetry.update() ;
+                sleep(20) ;
+            }
+             */
+
+
+            /*
+            boolean targetFound     = false;    // Set to true when an AprilTag target is detected
+            double  drive           = 0;        // Desired forward power/speed (-1 to +1)
+            double  strafe          = 0;        // Desired strafe power/speed (-1 to +1)
+            double  turn            = 0;        // Desired turning power/speed (-1 to +1)
+
+            while(opModeIsActive()) {
+                targetFound = false;
+                desiredTag  = null;
+
+                // Step through the list of detected tags and look for a matching tag
+                List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+                for (AprilTagDetection detection : currentDetections) {
+                    if ((detection.metadata != null) &&
+                            ((DESIRED_TAG_ID < 0) || (detection.id == DESIRED_TAG_ID))  ){
+                        targetFound = true;
+                        desiredTag = detection;
+                        break;  // don't look any further.
+                    } else {
+                        telemetry.addData("Unknown Target", "Tag ID %d is not in TagLibrary\n", detection.id);
+                    }
+                }
+
+                // Tell the driver what we see, and what to do.
+                if (targetFound) {
+                    telemetry.addData("Target", "ID %d (%s)", desiredTag.id, desiredTag.metadata.name);
+                    telemetry.addData("Range",  "%5.1f inches", desiredTag.ftcPose.range);
+                    telemetry.addData("Bearing","%3.0f degrees", desiredTag.ftcPose.bearing);
+                    telemetry.addData("Yaw","%3.0f degrees", desiredTag.ftcPose.yaw);
+                } else {
+                    telemetry.addData("Target", "not found") ;
+                }
+
+                if (targetFound) {
+
+                    // Determine heading, range and Yaw (tag image rotation) error so we can use them to control the robot automatically.
+                    double  rangeError      = (desiredTag.ftcPose.range - DESIRED_DISTANCE);
+                    double  headingError    = desiredTag.ftcPose.bearing;
+                    double  yawError        = desiredTag.ftcPose.yaw;
+
+                    // Use the speed and turn "gains" to calculate how we want the robot to move.
+                    drive  = Range.clip(rangeError * SPEED_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
+                    turn   = Range.clip(headingError * TURN_GAIN, -MAX_AUTO_TURN, MAX_AUTO_TURN) ;
+                    strafe = Range.clip(-yawError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
+
+                    telemetry.addData("Auto","Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
+                } else {
+                    drive = 0 ;
+                    strafe = 0;
+                    turn = 0 ;
+                }
+                telemetry.update() ;
+
+                moveRobot(drive, strafe, turn);
+                sleep(10);
+            }
+
+             */
         }
 
     }
@@ -106,8 +263,11 @@ public class InitRobotTest extends LinearOpMode {
         backRight.setPower(0);
         backLeft.setPower(0);
 
-        frontRight.setDirection(DcMotorEx.Direction.REVERSE);
-        backRight.setDirection(DcMotorEx.Direction.REVERSE);
+        // this ensures that all wheels go forward when applying postive power
+        frontRight.setDirection(DcMotorEx.Direction.FORWARD);
+        backRight.setDirection(DcMotorEx.Direction.FORWARD);
+        frontLeft.setDirection(DcMotorEx.Direction.REVERSE);
+        backLeft.setDirection(DcMotorEx.Direction.REVERSE);
 
         frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -118,6 +278,11 @@ public class InitRobotTest extends LinearOpMode {
         crane = hardwareMap.get(DcMotorEx.class, "Crane");
         crane.setDirection(DcMotorEx.Direction.REVERSE);
         crane.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        //suspension motor
+        suspension = hardwareMap.get(DcMotorEx.class, "Suspension");
+        suspension.setDirection(DcMotorEx.Direction.REVERSE);
+        suspension.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         //servos
         indexer = hardwareMap.get(Servo.class, "Indexer");
@@ -146,7 +311,7 @@ public class InitRobotTest extends LinearOpMode {
         distanceBucket = hardwareMap.get(DistanceSensor.class, "DistanceBucket") ;
     }
 
-    void initializeVision() {
+    void initTfod() {
         final String TFOD_MODEL_ASSET = "CenterStage.tflite";
         final String[] LABELS = {
                 "Pixel",
@@ -205,104 +370,75 @@ public class InitRobotTest extends LinearOpMode {
     // TODO: Refactor moveBackward(time, speed) to RobotClass and update calls in this OpMode
     // time + speed are parameters for all the movement
     void moveBackward(int time, double speed) throws InterruptedException {
-        frontLeft.setPower(speed);
-        frontRight.setPower(speed);
-        backLeft.setPower(speed);
-        backRight.setPower(speed);
+        frontLeft.setPower(-speed);
+        frontRight.setPower(-speed);
+        backLeft.setPower(-speed);
+        backRight.setPower(-speed);
 
         Thread.sleep(time);
 
-        frontLeft.setPower(0);
-        frontRight.setPower(0);
-        backLeft.setPower(0);
-        backRight.setPower(0);
-
+        stopAllWheels();
 
     }
 
     // TODO: Refactor moveBackward(speed) to RobotClass and update calls in this OpMode
     void moveBackward(double speed) throws InterruptedException {
-        frontLeft.setPower(speed);
-        frontRight.setPower(speed);
-        backLeft.setPower(speed);
-        backRight.setPower(speed);
+        frontLeft.setPower(-speed);
+        frontRight.setPower(-speed);
+        backLeft.setPower(-speed);
+        backRight.setPower(-speed);
 
     }
 
     // TODO: Refactor moveForward(time, speed) to RobotClass and update calls in this OpMode
     void moveForward(int time, double speed) throws InterruptedException {
-        frontLeft.setPower(-speed);
-        frontRight.setPower(-speed);
-        backLeft.setPower(-speed);
-        backRight.setPower(-speed);
+        frontLeft.setPower(speed);
+        frontRight.setPower(speed);
+        backLeft.setPower(speed);
+        backRight.setPower(speed);
 
         Thread.sleep(time);
 
-        frontLeft.setPower(0);
-        frontRight.setPower(0);
-        backLeft.setPower(0);
-        backRight.setPower(0);
+        stopAllWheels();
     }
 
     // TODO: Refactor moveForward(speed) to RobotClass and update calls in this OpMode
     void moveForward(double speed) throws InterruptedException {
-        frontLeft.setPower(-speed);
-        frontRight.setPower(-speed);
-        backLeft.setPower(-speed);
-        backRight.setPower(-speed);
+        frontLeft.setPower(speed);
+        frontRight.setPower(speed);
+        backLeft.setPower(speed);
+        backRight.setPower(speed);
 
     }
 
     // TODO: Refactor moveLeft(time, speed) to RobotClass and update calls in this OpMode
     void moveLeft(int time, double speed) throws InterruptedException {
-        frontLeft.setPower(speed);
-        frontRight.setPower(-speed);
-        backLeft.setPower(-speed);
-        backRight.setPower(speed);
+        frontLeft.setPower(-speed);
+        frontRight.setPower(speed);
+        backLeft.setPower(speed);
+        backRight.setPower(-speed);
 
         Thread.sleep(time);
 
-        frontLeft.setPower(0);
-        frontRight.setPower(0);
-        backLeft.setPower(0);
-        backRight.setPower(0);
+        stopAllWheels();
 
     }
 
     // TODO: Refactor moveRight(time, speed) to RobotClass and update calls in this OpMode
     void moveRight(int time, double speed) throws InterruptedException {
-        frontLeft.setPower(-speed);
-        frontRight.setPower(speed);
-        backLeft.setPower(speed);
-        backRight.setPower(-speed);
-
-        Thread.sleep(time);
-
-        frontLeft.setPower(0);
-        frontRight.setPower(0);
-        backLeft.setPower(0);
-        backRight.setPower(0);
-    }
-
-
-    // TODO: Refactor turnRight(time, speed) to RobotClass and update calls in this OpMode
-    void turnRight(int time, double speed) throws InterruptedException {
-        frontLeft.setPower(-speed);
-        frontRight.setPower(speed);
+        frontLeft.setPower(speed);
+        frontRight.setPower(-speed);
         backLeft.setPower(-speed);
         backRight.setPower(speed);
 
         Thread.sleep(time);
 
-        frontLeft.setPower(0);
-        frontRight.setPower(0);
-        backLeft.setPower(0);
-        backRight.setPower(0);
-
+        stopAllWheels();
     }
 
-    // TODO: Refactor turnLeft(time, speed) to RobotClass and update calls in this OpMode
-    void turnLeft(int time, double speed) throws InterruptedException {
+
+    // TODO: Refactor turnRight(time, speed) to RobotClass and update calls in this OpMode
+    void turnRight(int time, double speed) throws InterruptedException {
         frontLeft.setPower(speed);
         frontRight.setPower(-speed);
         backLeft.setPower(speed);
@@ -310,10 +446,20 @@ public class InitRobotTest extends LinearOpMode {
 
         Thread.sleep(time);
 
-        frontLeft.setPower(0);
-        frontRight.setPower(0);
-        backLeft.setPower(0);
-        backRight.setPower(0);
+        stopAllWheels();
+
+    }
+
+    // TODO: Refactor turnLeft(time, speed) to RobotClass and update calls in this OpMode
+    void turnLeft(int time, double speed) throws InterruptedException {
+        frontLeft.setPower(-speed);
+        frontRight.setPower(speed);
+        backLeft.setPower(-speed);
+        backRight.setPower(speed);
+
+        Thread.sleep(time);
+
+        stopAllWheels();
 
     }
 
@@ -332,7 +478,7 @@ public class InitRobotTest extends LinearOpMode {
     }
 
     void closeLeftIntake() {
-        intakeLeft.setPosition(0.2);
+        intakeLeft.setPosition(0.3);
     }
 
     void openRightIntake() {
@@ -340,7 +486,7 @@ public class InitRobotTest extends LinearOpMode {
     }
 
     void closeRightIntake() {
-        intakeRight.setPosition(0.8);
+        intakeRight.setPosition(0.6);
     }
 
     void lowerRamp() {
@@ -382,7 +528,7 @@ public class InitRobotTest extends LinearOpMode {
         }
         stopCrane();
     }
-    void extendCraneUseSensor(double speed, int timeout_milli, double backdrop_dist_cm) {
+    void extendCraneUseSensor(double speed, int timeout_milli, double backdrop_dist_cm, int slow_time) {
         // extend crane till given timeout value or till the sensor detects proximity to backdrop based on given distance
         // NOTE: timeout depends on the speed
         eTime1.reset();
@@ -390,6 +536,9 @@ public class InitRobotTest extends LinearOpMode {
         while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (eTime1.milliseconds() < timeout_milli)) {
 
         }
+        stopCrane();
+        crane.setPower(speed*0.2);
+        sleep(slow_time) ;
         stopCrane();
     }
     void retractCrane(double speed) {
@@ -423,13 +572,13 @@ public class InitRobotTest extends LinearOpMode {
         stopCrane();
     }
     void positionCraneLow() {
-        craneAngle.setPosition(0.25);
+        craneAngle.setPosition(0.53);
     }
     void positionCraneMedium() {
-        craneAngle.setPosition(0.5);
+        craneAngle.setPosition(0.65);
     }
     void positionCraneHigh() {
-        craneAngle.setPosition(1.0);
+        craneAngle.setPosition(0.85);
     }
 
     void positionCraneBase() {
@@ -468,4 +617,78 @@ public class InitRobotTest extends LinearOpMode {
             telemetry.addData("Pixel ", recognition.getLabel() + " Conf. " + recognition.getConfidence() + " Width " + recognition.getWidth() + " Height " + recognition.getHeight());
         }
     }
+
+    private void initAprilTag() {
+        // Create the AprilTag processor by using a builder.
+        aprilTag = new AprilTagProcessor.Builder().build();
+
+        // Create the vision portal by using a builder.
+            visionPortal = new VisionPortal.Builder()
+                    .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
+                    .addProcessor(aprilTag)
+                    .build();
+
+        setManualExposure(6, 250);  // Use low exposure time to reduce motion blur
+    }
+
+    private void    setManualExposure(int exposureMS, int gain) {
+        // Wait for the camera to be open, then use the controls
+
+        if (visionPortal == null) {
+            return;
+        }
+
+        // Make sure camera is streaming before we try to set the exposure controls
+        if (visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING) {
+            telemetry.addData("Camera", "Waiting");
+            telemetry.update();
+            while (!isStopRequested() && (visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING)) {
+                sleep(20);
+            }
+            telemetry.addData("Camera", "Ready");
+            telemetry.update();
+        }
+
+        // Set camera controls unless we are stopping.
+        if (!isStopRequested())
+        {
+            ExposureControl exposureControl = visionPortal.getCameraControl(ExposureControl.class);
+            if (exposureControl.getMode() != ExposureControl.Mode.Manual) {
+                exposureControl.setMode(ExposureControl.Mode.Manual);
+                sleep(50);
+            }
+            exposureControl.setExposure((long)exposureMS, TimeUnit.MILLISECONDS);
+            sleep(20);
+            GainControl gainControl = visionPortal.getCameraControl(GainControl.class);
+            gainControl.setGain(gain);
+            sleep(20);
+        }
+    }
+
+    public void moveRobot(double x, double y, double yaw) {
+        // Calculate wheel powers.
+        double leftFrontPower    =  x -y -yaw;
+        double rightFrontPower   =  x +y +yaw;
+        double leftBackPower     =  x +y -yaw;
+        double rightBackPower    =  x -y +yaw;
+
+        // Normalize wheel powers to be less than 1.0
+        double max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
+        max = Math.max(max, Math.abs(leftBackPower));
+        max = Math.max(max, Math.abs(rightBackPower));
+
+        if (max > 1.0) {
+            leftFrontPower /= max;
+            rightFrontPower /= max;
+            leftBackPower /= max;
+            rightBackPower /= max;
+        }
+
+        // Send powers to the wheels; note that the camera is at the back so everything is reversed
+        frontLeft.setPower(-leftFrontPower);
+        frontRight.setPower(-rightFrontPower);
+        backLeft.setPower(-leftBackPower);
+        backRight.setPower(-rightBackPower);
+    }
+
 }
