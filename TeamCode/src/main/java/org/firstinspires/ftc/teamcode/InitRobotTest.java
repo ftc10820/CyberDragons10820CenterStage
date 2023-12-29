@@ -88,9 +88,9 @@ public class InitRobotTest extends LinearOpMode {
     final double STRAFE_GAIN =  0.015 ;   //  Strafe Speed Control "Gain".  eg: Ramp up to 25% power at a 25 degree Yaw error.   (0.25 / 25.0)
     final double TURN_GAIN   =  0.01  ;   //  Turn Control "Gain".  eg: Ramp up to 25% power at a 25 degree error. (0.25 / 25.0)
 
-    final double MAX_AUTO_SPEED = 0.5;   //  Clip the approach speed to this max value (adjust for your robot)
-    final double MAX_AUTO_STRAFE= 0.5;   //  Clip the approach speed to this max value (adjust for your robot)
-    final double MAX_AUTO_TURN  = 0.3;   //  Clip the turn speed to this max value (adjust for your robot)
+    final double MAX_AUTO_SPEED = 0.8;   //  Clip the approach speed to this max value (adjust for your robot)
+    final double MAX_AUTO_STRAFE= 0.8;   //  Clip the approach speed to this max value (adjust for your robot)
+    final double MAX_AUTO_TURN  = 0.01;   //  Clip the turn speed to this max value (adjust for your robot)
     private static final int DESIRED_TAG_ID = 2;     // Choose the tag you want to approach or set to -1 for ANY tag.
     private AprilTagDetection desiredTag = null;     // Used to hold the data for a detected AprilTag
 
@@ -99,8 +99,7 @@ public class InitRobotTest extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
 
         initialize();
-
-        //initAprilTag(); ;
+        initAprilTag();
 
         // initialize the ramp, bucket platform and intake
 
@@ -112,6 +111,12 @@ public class InitRobotTest extends LinearOpMode {
         waitForStart();
 
         if(opModeIsActive()) {
+
+            while (opModeIsActive()) {
+
+                strafeToAprilTag(3);
+
+            }
             /*
             suspension.setPower(1.0);
             sleep(1000) ;
@@ -136,6 +141,9 @@ public class InitRobotTest extends LinearOpMode {
 
             //moveForward(0.8);
 
+
+
+            /*
             eTime1.reset();
             while (eTime1.milliseconds() < 50000) {
                 telemetry.addData("Left Pixel: ", getPixelDetectionLeftVal() ) ;
@@ -162,10 +170,11 @@ public class InitRobotTest extends LinearOpMode {
             }
             stopAllWheels();
             sleep(10000) ;
+            */
 
-             
 
             /*
+            // placing a pixel at high level
             positionCraneHigh();
             extendCraneUseSensor(0.8,10000, 12.5, 2500);
             sleep(1000);
@@ -200,7 +209,7 @@ public class InitRobotTest extends LinearOpMode {
                 List<AprilTagDetection> currentDetections = aprilTag.getDetections();
                 for (AprilTagDetection detection : currentDetections) {
                     if ((detection.metadata != null) &&
-                            ((DESIRED_TAG_ID < 0) || (detection.id == DESIRED_TAG_ID))  ){
+                            (detection.id == DESIRED_TAG_ID)  ){
                         targetFound = true;
                         desiredTag = detection;
                         break;  // don't look any further.
@@ -242,8 +251,9 @@ public class InitRobotTest extends LinearOpMode {
                 moveRobot(drive, strafe, turn);
                 sleep(10);
             }
+            */
 
-             */
+
         }
 
     }
@@ -592,7 +602,7 @@ public class InitRobotTest extends LinearOpMode {
         droneLauncher.setPosition(1);
     }
 
-    final int PIXEL_DETECTION_THRESHOLD = 100 ;
+    final int PIXEL_DETECTION_THRESHOLD = 110 ;
     // Pixel detection uses alpha; could use others but this seems the most straightforward
     // threshold needs to be calibrated at the match site
     boolean isPixelDetectedLeft() {
@@ -689,6 +699,63 @@ public class InitRobotTest extends LinearOpMode {
         frontRight.setPower(-rightFrontPower);
         backLeft.setPower(-leftBackPower);
         backRight.setPower(-rightBackPower);
+    }
+
+    void strafeToAprilTag(int tagNumber) throws InterruptedException {
+
+        //tag center - x = 3, y = 16.5
+        double tagXPos = 3;
+        double tagYPos = 16.5;
+
+        boolean targetFound = false;
+        desiredTag  = null;
+
+        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+        for (AprilTagDetection detection : currentDetections) {
+            if ((detection.metadata != null) &&
+                    (detection.id == tagNumber)  ){
+                targetFound = true;
+                desiredTag = detection;
+                break;  // don't look any further.
+            } else {
+                telemetry.addData("Unknown Target", "Tag ID %d is not in TagLibrary\n", detection.id);
+            }
+        }
+
+        if (targetFound) {
+            telemetry.addData("Target", "ID %d (%s)", desiredTag.id, desiredTag.metadata.name);
+            telemetry.addData("X Value: ",  desiredTag.ftcPose.x);
+            telemetry.addData("Y Value: ",  desiredTag.ftcPose.y);
+
+
+        } else {
+            telemetry.addData("Target", "not found") ;
+        }
+
+        telemetry.update();
+
+
+        if (desiredTag != null) {
+
+            double xPos = desiredTag.ftcPose.x;
+            double yPos = desiredTag.ftcPose.y;
+            double threshold = 0.5;
+
+            if (Math.abs(xPos - tagXPos) > threshold) {
+
+                if (xPos > tagXPos) {
+
+                    moveLeft(25, 0.5);
+
+
+                } else if (xPos < tagXPos) {
+
+                    moveRight(25, 0.5);
+
+                }
+            }
+        }
+
     }
 
 }
