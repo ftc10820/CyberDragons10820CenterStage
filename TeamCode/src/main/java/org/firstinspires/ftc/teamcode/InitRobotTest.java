@@ -84,13 +84,13 @@ public class InitRobotTest extends LinearOpMode {
     //  Set the GAIN constants to control the relationship between the measured position error, and how much power is
     //  applied to the drive motors to correct the error.
     //  Drive = Error * Gain    Make these values smaller for smoother control, or larger for a more aggressive response.
-    final double SPEED_GAIN  =  0.02  ;   //  Forward Speed Control "Gain". eg: Ramp up to 50% power at a 25 inch error.   (0.50 / 25.0)
+    final double SPEED_GAIN  =  0.1  ;   //  Forward Speed Control "Gain". eg: Ramp up to 50% power at a 25 inch error.   (0.50 / 25.0)
     final double STRAFE_GAIN =  0.015 ;   //  Strafe Speed Control "Gain".  eg: Ramp up to 25% power at a 25 degree Yaw error.   (0.25 / 25.0)
     final double TURN_GAIN   =  0.01  ;   //  Turn Control "Gain".  eg: Ramp up to 25% power at a 25 degree error. (0.25 / 25.0)
 
-    final double MAX_AUTO_SPEED = 0.5;   //  Clip the approach speed to this max value (adjust for your robot)
-    final double MAX_AUTO_STRAFE= 0.5;   //  Clip the approach speed to this max value (adjust for your robot)
-    final double MAX_AUTO_TURN  = 0.3;   //  Clip the turn speed to this max value (adjust for your robot)
+    final double MAX_AUTO_SPEED = 0.8;   //  Clip the approach speed to this max value (adjust for your robot)
+    final double MAX_AUTO_STRAFE= 0.6;   //  Clip the approach speed to this max value (adjust for your robot)
+    final double MAX_AUTO_TURN  = 0.1;   //  Clip the turn speed to this max value (adjust for your robot)
     private static final int DESIRED_TAG_ID = 2;     // Choose the tag you want to approach or set to -1 for ANY tag.
     private AprilTagDetection desiredTag = null;     // Used to hold the data for a detected AprilTag
 
@@ -156,14 +156,14 @@ public class InitRobotTest extends LinearOpMode {
                     sleep(2000) ;
                     liftRamp();
                     initIntakePlatform();
-                    sleep(2000) ;
+                    sleep(2000) ; 
                     break ;
                 }
             }
             stopAllWheels();
             sleep(10000) ;
 
-             
+
 
             /*
             positionCraneHigh();
@@ -186,7 +186,7 @@ public class InitRobotTest extends LinearOpMode {
              */
 
 
-            /*
+
             boolean targetFound     = false;    // Set to true when an AprilTag target is detected
             double  drive           = 0;        // Desired forward power/speed (-1 to +1)
             double  strafe          = 0;        // Desired strafe power/speed (-1 to +1)
@@ -243,7 +243,7 @@ public class InitRobotTest extends LinearOpMode {
                 sleep(10);
             }
 
-             */
+
         }
 
     }
@@ -312,7 +312,7 @@ public class InitRobotTest extends LinearOpMode {
     }
 
     void initTfod() {
-        final String TFOD_MODEL_ASSET = "CenterStage.tflite";
+        final String TFOD_MODEL_ASSET = "pixel_centerstage10820.tflite";
         final String[] LABELS = {
                 "Pixel",
         };
@@ -320,16 +320,16 @@ public class InitRobotTest extends LinearOpMode {
         // Create the TensorFlow processor by using a builder.
         tfod = new TfodProcessor.Builder()
 
-                // Use setModelAssetName() if the TF Model is built in as an asset.
-                // Use setModelFileName() if you have downloaded a custom team model to the Robot Controller.
+                 //Use setModelAssetName() if the TF Model is built in as an asset.
+                 //Use setModelFileName() if you have downloaded a custom team model to the Robot Controller.
                 .setModelAssetName(TFOD_MODEL_ASSET)
                 //.setModelFileName(TFOD_MODEL_FILE)
 
                 .setModelLabels(LABELS)
-                //.setIsModelTensorFlow2(true)
-                //.setIsModelQuantized(true)
-                //.setModelInputSize(300)
-                //.setModelAspectRatio(16.0 / 9.0)
+                .setIsModelTensorFlow2(true)
+                .setIsModelQuantized(true)
+                .setModelInputSize(300)
+                .setModelAspectRatio(16.0 / 9.0)
 
                 .build();
 
@@ -341,16 +341,16 @@ public class InitRobotTest extends LinearOpMode {
         // Choose a camera resolution. Not all cameras support all resolutions.
         //builder.setCameraResolution(new Size(640, 480));
 
-        // Enable the RC preview (LiveView).  Set "false" to omit camera monitoring.
-        //builder.enableCameraMonitoring(true);
+         //Enable the RC preview (LiveView).  Set "false" to omit camera monitoring.
+        builder.enableCameraMonitoring(true);
 
-        // Set the stream format; MJPEG uses less bandwidth than default YUY2.
-        //builder.setStreamFormat(VisionPortal.StreamFormat.YUY2);
+         //Set the stream format; MJPEG uses less bandwidth than default YUY2.
+        builder.setStreamFormat(VisionPortal.StreamFormat.YUY2);
 
         // Choose whether or not LiveView stops if no processors are enabled.
         // If set "true", monitor shows solid orange screen if no processors enabled.
         // If set "false", monitor shows camera view without annotations.
-        //builder.setAutoStopLiveView(false);
+        builder.setAutoStopLiveView(false);
 
         // Set and enable the processor.
         builder.addProcessor(tfod);
@@ -359,10 +359,10 @@ public class InitRobotTest extends LinearOpMode {
         visionPortal = builder.build();
 
         // Set confidence threshold for TFOD recognitions, at any time.
-        //tfod.setMinResultConfidence(0.75f);
+        tfod.setMinResultConfidence(0.75f);
 
-        // Disable or re-enable the TFOD processor at any time.
-        //visionPortal.setProcessorEnabled(tfod, true);
+         //Disable or re-enable the TFOD processor at any time.
+        visionPortal.setProcessorEnabled(tfod, true);
 
     }
 
@@ -402,7 +402,8 @@ public class InitRobotTest extends LinearOpMode {
         stopAllWheels();
     }
 
-    // TODO: Refactor moveForward(speed) to RobotClass and update calls in this OpMode
+    // TODO: Refactor moveForward(sp
+    //  eed) to RobotClass and update calls in this OpMode
     void moveForward(double speed) throws InterruptedException {
         frontLeft.setPower(speed);
         frontRight.setPower(speed);
