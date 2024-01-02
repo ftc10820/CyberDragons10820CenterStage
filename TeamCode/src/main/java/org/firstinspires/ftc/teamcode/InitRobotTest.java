@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode;
 
 
+import android.util.Size;
+
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
@@ -87,7 +89,8 @@ public class InitRobotTest extends LinearOpMode {
     final double SPEED_GAIN  =  0.1  ;   //  Forward Speed Control "Gain". eg: Ramp up to 50% power at a 25 inch error.   (0.50 / 25.0)
     final double STRAFE_GAIN =  0.015 ;   //  Strafe Speed Control "Gain".  eg: Ramp up to 25% power at a 25 degree Yaw error.   (0.25 / 25.0)
     final double TURN_GAIN   =  0.01  ;   //  Turn Control "Gain".  eg: Ramp up to 25% power at a 25 degree error. (0.25 / 25.0)
-
+    final double TFOD_Y_GAIN = 0.004;    // Forward Speed Control "Gain" for pixel intake.
+    final double TFOD_X_GAIN = 0.002;    // Strafe Speed Control "Gain" for pixel intake.
     final double MAX_AUTO_SPEED = 0.8;   //  Clip the approach speed to this max value (adjust for your robot)
 
     final double MAX_AUTO_STRAFE= 0.6;   //  Clip the approach speed to this max value (adjust for your robot)
@@ -102,7 +105,7 @@ public class InitRobotTest extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
 
         initialize();
-        initAprilTag();
+        initTfod();
 
         // initialize the ramp, bucket platform and intake
 
@@ -115,11 +118,109 @@ public class InitRobotTest extends LinearOpMode {
 
         if(opModeIsActive()) {
 
-            while (opModeIsActive()) {
+            boolean targetFound = false;
+            double  drive           = 0;        // Desired forward power/speed (-1 to +1)
+            double  strafe          = 0;        // Desired strafe power/speed (-1 to +1)
+            double xError = 0, yError = 0;
+            eTime1.reset();
 
-                strafeToAprilTag(3);
+            targetFound = true ;
+            while (eTime1.milliseconds() < 5000) {
+            //while (opModeIsActive()) {
+                if (targetFound == true)
+                    break;
+                //strafeToAprilTag(3);
+                //telemetryTfod();
+                //telemetry.update() ;
+
+                List<Recognition> currentRecognitions = tfod.getRecognitions();
+                int numDetections = currentRecognitions.size();
+                telemetry.addData("# Objects Detected", numDetections);
+
+                // Step through the list of recognitions and determine which one to align to
+                // As a first step assume that you have just one recognition or take the one with the highest confidence
+                double curConf = 0.0 ;
+                double pixelx=0.0, pixely=0.0, pixelwidth=0.0, pixelheight=0.0 ;
+                for (Recognition recognition : currentRecognitions) {
+                    double x = (recognition.getLeft() + recognition.getRight()) / 2 ;
+                    double y = (recognition.getTop()  + recognition.getBottom()) / 2 ;
+
+                    if (recognition.getConfidence() >= curConf) {
+                        curConf = recognition.getConfidence() ;
+                        pixelx = x;
+                        pixely = y;
+                        pixelwidth = recognition.getWidth();
+                        pixelheight = recognition.getHeight();
+                    }
+                    telemetry.addData(""," ");
+                    telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100);
+                    telemetry.addData("- Position", "%.0f / %.0f", x, y);
+                    telemetry.addData("- Size", "%.0f x %.0f", recognition.getWidth(), recognition.getHeight());
+                }   // end for() loop
+
+                if (curConf != 0.0) {
+                    xError = 280-pixelx;
+                    yError = 330-pixely;
+
+                    if (yError < 30) {
+                        targetFound = true;
+                    }
+
+                    drive  = Range.clip(yError * TFOD_Y_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
+                    strafe = Range.clip(xError * TFOD_X_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
+
+                    // there are times when there is no pixels detected
+                    // In that case, keep drive train enabled at low power for a small amount of time only
+                } else {
+                    drive = 0.05 ;
+                    strafe = 0 ;
+                    /*
+                    if (eTime2.milliseconds() < 2000) {
+                        break ;
+                    }
+                     */
+                }
+
+                telemetry.addData("- Error", "%.0f / %.0f", xError, yError);
+                telemetry.addData("- Power", "D: " + drive + " S: " + strafe);
+
+                moveRobot(drive,strafe,0);
+                telemetry.update();
+                sleep(20) ;
 
             }
+            stopAllWheels();
+
+            if (targetFound == true) {
+                // move robot forward and let intake mechanism kick in using color sensor
+                moveForward(0.2);
+                eTime1.reset();
+                while (eTime1.milliseconds() < 5000) {
+                    telemetry.addData("Left Pixel: ", getPixelDetectionLeftVal() ) ;
+                    telemetry.addData("Right Pixel ", getPixelDetectionRightVal()) ;
+                    telemetry.update() ;
+                    if (isPixelDetectedLeft() || isPixelDetectedRight()) {
+                        stopAllWheels();
+                        // lower ramp
+                        lowerRamp();
+                        readyIntakePlatform();
+                        // close intake
+                        closeRightIntake();
+                        closeLeftIntake();
+                        sleep(2000) ;
+                        // raise the ramp again
+                        openRightIntake();
+                        openLeftIntake();
+                        sleep(2000) ;
+                        liftRamp();
+                        initIntakePlatform();
+                        sleep(2000) ;
+                        break ;
+                    }
+                }
+                stopAllWheels();
+            }
+
             /*
             suspension.setPower(1.0);
             sleep(1000) ;
@@ -199,7 +300,7 @@ public class InitRobotTest extends LinearOpMode {
              */
 
 
-
+            /*
             boolean targetFound     = false;    // Set to true when an AprilTag target is detected
             double  drive           = 0;        // Desired forward power/speed (-1 to +1)
             double  strafe          = 0;        // Desired strafe power/speed (-1 to +1)
@@ -255,6 +356,8 @@ public class InitRobotTest extends LinearOpMode {
                 moveRobot(drive, strafe, turn);
                 sleep(10);
             }
+
+             */
 
 
 
@@ -329,8 +432,15 @@ public class InitRobotTest extends LinearOpMode {
     void initTfod() {
         final String TFOD_MODEL_ASSET = "pixel_centerstage10820.tflite";
         final String[] LABELS = {
+                "green", "purple", "white", "yellow",
+        };
+        /*
+        final String TFOD_MODEL_ASSET = "CenterStage.tflite";
+        final String[] LABELS = {
                 "Pixel",
         };
+
+         */
 
         // Create the TensorFlow processor by using a builder.
         tfod = new TfodProcessor.Builder()
@@ -341,10 +451,10 @@ public class InitRobotTest extends LinearOpMode {
                 //.setModelFileName(TFOD_MODEL_FILE)
 
                 .setModelLabels(LABELS)
-                .setIsModelTensorFlow2(true)
-                .setIsModelQuantized(true)
-                .setModelInputSize(300)
-                .setModelAspectRatio(16.0 / 9.0)
+                //.setIsModelTensorFlow2(true)
+                //.setIsModelQuantized(true)
+                //.setModelInputSize(300)
+                .setModelAspectRatio(4.0 /3.0)
 
                 .build();
 
@@ -354,18 +464,18 @@ public class InitRobotTest extends LinearOpMode {
         builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 2"));
 
         // Choose a camera resolution. Not all cameras support all resolutions.
-        //builder.setCameraResolution(new Size(640, 480));
+        builder.setCameraResolution(new Size(640, 480));
 
          //Enable the RC preview (LiveView).  Set "false" to omit camera monitoring.
-        //builder.enableCameraMonitoring(true);
+        builder.enableLiveView(true) ;
 
          //Set the stream format; MJPEG uses less bandwidth than default YUY2.
-        builder.setStreamFormat(VisionPortal.StreamFormat.YUY2);
+        //builder.setStreamFormat(VisionPortal.StreamFormat.YUY2);
 
         // Choose whether or not LiveView stops if no processors are enabled.
         // If set "true", monitor shows solid orange screen if no processors enabled.
         // If set "false", monitor shows camera view without annotations.
-        builder.setAutoStopLiveView(false);
+        //builder.setAutoStopLiveView(false);
 
         // Set and enable the processor.
         builder.addProcessor(tfod);
@@ -374,10 +484,10 @@ public class InitRobotTest extends LinearOpMode {
         visionPortal = builder.build();
 
         // Set confidence threshold for TFOD recognitions, at any time.
-        tfod.setMinResultConfidence(0.75f);
+        tfod.setMinResultConfidence(0.5f);
 
          //Disable or re-enable the TFOD processor at any time.
-        visionPortal.setProcessorEnabled(tfod, true);
+        //visionPortal.setProcessorEnabled(tfod, true);
 
     }
 
@@ -701,10 +811,10 @@ public class InitRobotTest extends LinearOpMode {
         }
 
         // Send powers to the wheels; note that the camera is at the back so everything is reversed
-        frontLeft.setPower(-leftFrontPower);
-        frontRight.setPower(-rightFrontPower);
-        backLeft.setPower(-leftBackPower);
-        backRight.setPower(-rightBackPower);
+        frontLeft.setPower(leftFrontPower);
+        frontRight.setPower(rightFrontPower);
+        backLeft.setPower(leftBackPower);
+        backRight.setPower(rightBackPower);
     }
 
     void strafeToAprilTag(int tagNumber) throws InterruptedException {
