@@ -335,7 +335,7 @@ public class RobotClass {
         intakeRight.setPosition(0.9);
     }
 
-    public void intakesClose() {
+    public void closeIntakes() {
         closeLeftIntake();
         closeRightIntake();
     }
@@ -469,7 +469,7 @@ public class RobotClass {
         Thread.sleep(500);
 
         // Move intakeLeft, intakeRight in and reset
-        intakesClose();
+        closeIntakes();
         Thread.sleep(500);
         openIntakes();
 
