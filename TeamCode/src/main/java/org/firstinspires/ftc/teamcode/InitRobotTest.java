@@ -205,20 +205,7 @@ public class InitRobotTest extends LinearOpMode {
                     telemetry.update() ;
                     if (isPixelDetectedLeft() || isPixelDetectedRight()) {
                         stopAllWheels();
-                        // lower ramp
-                        lowerRamp();
-                        readyIntakePlatform();
-                        // close intake
-                        closeRightIntake();
-                        closeLeftIntake();
-                        sleep(2000) ;
-                        // raise the ramp again
-                        openRightIntake();
-                        openLeftIntake();
-                        sleep(2000) ;
-                        liftRamp();
-                        initIntakePlatform();
-                        sleep(2000) ;
+                        intakePixel();
                         break ;
                     }
                 }
@@ -226,53 +213,24 @@ public class InitRobotTest extends LinearOpMode {
             }
 
             /*
-            suspension.setPower(1.0);
-            sleep(1000) ;
-            suspension.setPower(0.0);
+            // testing suspension
+            driveSuspension(1.0);
+            sleep(5000) ;
+            stopSuspension();
              */
-
-            /*
-            lowerRamp();
-            readyIntakePlatform();
-            sleep (1000) ;
-            closeRightIntake();
-            closeLeftIntake();
-            sleep(3000) ;
-            openRightIntake();
-            openLeftIntake();
-            sleep(2000) ;
-            liftRamp();
-            initIntakePlatform();
-            sleep(2000) ;
-
-             */
-
-            //moveForward(0.8);
-
 
 
             /*
+            // testing intake of pixel
             eTime1.reset();
+            //moveForward(0.8);
             while (eTime1.milliseconds() < 50000) {
                 telemetry.addData("Left Pixel: ", getPixelDetectionLeftVal() ) ;
                 telemetry.addData("Right Pixel ", getPixelDetectionRightVal()) ;
                 telemetry.update() ;
                 if (isPixelDetectedLeft() && isPixelDetectedRight()) {
                     stopAllWheels();
-                    // lower ramp
-                    lowerRamp();
-                    readyIntakePlatform();
-                    // close intake
-                    closeRightIntake();
-                    closeLeftIntake();
-                    sleep(2000) ;
-                    // raise the ramp again
-                    openRightIntake();
-                    openLeftIntake();
-                    sleep(2000) ;
-                    liftRamp();
-                    initIntakePlatform();
-                    sleep(2000) ; 
+                    intakePixel() ;
                     break ;
                 }
             }
@@ -283,7 +241,7 @@ public class InitRobotTest extends LinearOpMode {
 
 
             /*
-            // placing a pixel at high level
+            // testing placing a pixel at high level
             positionCraneHigh();
             extendCraneUseSensor(0.8,10000, 12.5, 2500);
             sleep(1000);
@@ -738,6 +696,17 @@ public class InitRobotTest extends LinearOpMode {
         return pixelDetectorRight.alpha() ;
     }
 
+    void driveSuspension(double power) {
+       suspension.setPower(power);
+    }
+
+    void stopSuspension() {
+        suspension.setPower(0.0);
+    }
+
+    void retractSuspension(double power) {
+        suspension.setPower(-power);
+    }
     void telemetryTfod() {
         List<Recognition> currentRecognitions = tfod.getRecognitions() ;
         telemetry.addData("# Objects detected", currentRecognitions.size()) ;
@@ -874,6 +843,25 @@ public class InitRobotTest extends LinearOpMode {
                 }
             }
         }
+
+    }
+
+    // function for intaking pixel after detection
+    // lower ramp, engaging bucket, closing intake servos
+    void intakePixel() {
+        // sleep values in this function need to be modified
+        lowerRamp();
+        readyIntakePlatform();
+        sleep (1000) ;
+        closeRightIntake();
+        closeLeftIntake();
+        sleep(3000) ;
+        openRightIntake();
+        openLeftIntake();
+
+        liftRamp();
+        initIntakePlatform();
+        sleep(2000) ;
 
     }
 
