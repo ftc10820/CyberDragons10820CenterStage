@@ -104,15 +104,11 @@ public class InitRobotTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
-        initialize();
+        initialize(); // this is only for initializing the drives, servos and sensors
         initTfod();
+        //initAprilTag();
 
-        // initialize the ramp, bucket platform and intake
-
-        liftRamp();
-        initIntakePlatform();
-        openRightIntake();
-        openLeftIntake();
+        initAutonomous() ; // initialize servos for autonomous ; raise ramp and open intake
 
         waitForStart();
 
@@ -124,8 +120,11 @@ public class InitRobotTest extends LinearOpMode {
             double xError = 0, yError = 0;
             eTime1.reset();
 
-            targetFound = true ;
-            while (eTime1.milliseconds() < 5000) {
+            // ok to shutoff streaming
+            visionPortal.stopStreaming();
+
+            targetFound = true ; // NOTE: comment this out to bypass pixel detection
+            while (eTime1.milliseconds() < 5000) { // assuming here that it wont take too much time to get to target
             //while (opModeIsActive()) {
                 if (targetFound == true)
                     break;
@@ -162,7 +161,7 @@ public class InitRobotTest extends LinearOpMode {
                     xError = 280-pixelx;
                     yError = 330-pixely;
 
-                    if (yError < 30) {
+                    if (yError < 30) { // 30 (pixels) is used as threshold here, but it can be changed to a different value
                         targetFound = true;
                     }
 
@@ -171,9 +170,14 @@ public class InitRobotTest extends LinearOpMode {
 
                     // there are times when there is no pixels detected
                     // In that case, keep drive train enabled at low power for a small amount of time only
+                    // there needs to be some extra logic over here for that
+                    //
                 } else {
                     drive = 0.05 ;
                     strafe = 0 ;
+
+                    // for using this in teleop, replace above with gamepad input
+                    // see example RobotAutoDriveToAprilTagOmni.java example
                     /*
                     if (eTime2.milliseconds() < 2000) {
                         break ;
@@ -411,14 +415,6 @@ public class InitRobotTest extends LinearOpMode {
         droneLauncher = hardwareMap.get(Servo.class, "DroneLauncher");
 
 
-        /*
-        ramp.setPosition(0.3);
-        indexer.setPosition(0.25);
-        intakeLeft.setPosition(0.1);
-        intakeRight.setPosition(0.3);
-         */
-
-
         //sensors
         touchCrane = hardwareMap.get(TouchSensor.class, "Touch");
         colorFieldLine = hardwareMap.get(ColorSensor.class, "Color");
@@ -427,6 +423,13 @@ public class InitRobotTest extends LinearOpMode {
         pixelDetectorRight = hardwareMap.get(ColorSensor.class, "PixelDetectorRight");
 
         distanceBucket = hardwareMap.get(DistanceSensor.class, "DistanceBucket") ;
+    }
+
+    void initAutonomous() {
+        liftRamp();
+        initIntakePlatform();
+        openRightIntake();
+        openLeftIntake();
     }
 
     void initTfod() {
