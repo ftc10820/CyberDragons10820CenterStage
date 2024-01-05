@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import android.util.Size;
 
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -13,6 +14,7 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
@@ -25,11 +27,14 @@ public class RobotClass {
     public final static int RED = 1;
     public final static int BLUE = 2;
 
-    // drivetrain
+    private SampleMecanumDrive  rrDrive;
+
+    // raw drivetrain
     public DcMotorEx frontLeft;
     public DcMotorEx backLeft;
     public DcMotorEx frontRight;
     public DcMotorEx backRight;
+    public DcMotorEx suspension;
 
     // vision object
     public VisionPortal camera1;
@@ -97,8 +102,15 @@ public class RobotClass {
         rightEncoder = hwmap.get(DcMotorEx.class, "RightEncoder");
         middleEncoder = hwmap.get(DcMotorEx.class, "MiddleEncoder");
 
+        rrDrive = new SampleMecanumDrive(hwmap);
+
         //crane motor
         crane = hwmap.get(DcMotorEx.class, "Crane");
+
+        //suspension motor
+        suspension = hwmap.get(DcMotorEx.class, "Suspension");
+        suspension.setDirection(DcMotorEx.Direction.REVERSE);
+        suspension.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         //servos
         indexer = hwmap.get(Servo.class, "Indexer");
@@ -317,7 +329,7 @@ public class RobotClass {
         crane.setPower(0);
     }
 
-    public void extendCrane(double power) {
+    public void setCranePower(double power) {
         boolean isTouched = false;
         if (touchSensor.isPressed() && power > 0){
             isTouched = true;
@@ -337,6 +349,10 @@ public class RobotClass {
 
     public void launchDrone() {
         droneLauncher.setPosition(1);
+    }
+
+    void setSuspensionPower(double power) {
+        suspension.setPower(power);
     }
 
     public void openLeftIntake() {
@@ -366,7 +382,7 @@ public class RobotClass {
     }
 
     public void lowerRamp() {
-        ramp.setPosition(0.45);
+        ramp.setPosition(0.55);
     }
     public void lowerIndexer() {
         indexer.setPosition(0);
