@@ -123,7 +123,7 @@ public class InitRobotTest extends LinearOpMode {
             // ok to shutoff streaming
             visionPortal.stopStreaming();
 
-            targetFound = true ; // NOTE: comment this out to bypass pixel detection
+            targetFound = false ; // NOTE: comment this out to bypass pixel detection
             while (eTime1.milliseconds() < 5000) { // assuming here that it wont take too much time to get to target
             //while (opModeIsActive()) {
                 if (targetFound == true)
@@ -577,12 +577,12 @@ public class InitRobotTest extends LinearOpMode {
     }
 
     void lowerRamp() {
-        ramp.setPosition(0.4);
+        ramp.setPosition(0.55);
         // dont press too hard on mat, otherwise it lifts up the robot and the intake may not work properly
     }
 
     void liftRamp() {
-        ramp.setPosition(0.3);
+        ramp.setPosition(0.47);
     }
 
     void readyIntakePlatform() {
