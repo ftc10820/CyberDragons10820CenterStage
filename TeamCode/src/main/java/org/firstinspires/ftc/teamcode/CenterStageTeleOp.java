@@ -167,22 +167,22 @@ public class CenterStageTeleOp extends LinearOpMode {
 
             if (gamepad1.dpad_up) {
 
-                ramp.setPosition(0.3);
+                ramp.setPosition(0.47);
 
             } else if (gamepad1.dpad_down) {
 
-                ramp.setPosition(0.45);
+                ramp.setPosition(0.55);
 
             }
 
 
             if (gamepad1.x) {
 
-                ramp.setPosition(0.45);
+                ramp.setPosition(0.55);
                 indexer.setPosition(0);
                 sleep(500);
 
-                intakeLeft.setPosition(0.3);
+                intakeLeft.setPosition(0.47);
                 intakeRight.setPosition(0.65);
                 sleep(500);
                 intakeLeft.setPosition(1);
@@ -191,7 +191,7 @@ public class CenterStageTeleOp extends LinearOpMode {
                 indexer.setPosition(1);
                 sleep(1000);
 
-                ramp.setPosition(0.3);
+                ramp.setPosition(0.47);
                 indexer.setPosition(0.25);
             }
 
@@ -237,7 +237,7 @@ public class CenterStageTeleOp extends LinearOpMode {
 
         droneLauncher = hardwareMap.get(Servo.class, "DroneLauncher");
 
-        ramp.setPosition(0.3);
+        ramp.setPosition(0.47);
         indexer.setPosition(0.25);
         intakeLeft.setPosition(1);
         intakeRight.setPosition(0.1);
