@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import android.util.Size;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -21,6 +22,8 @@ import java.util.List;
 import java.lang.Math;
 
 public class RobotClass {
+    public final static int RED = 1;
+    public final static int BLUE = 2;
 
     // drivetrain
     public DcMotorEx frontLeft;
@@ -56,12 +59,15 @@ public class RobotClass {
     public Servo droneLauncher;
 
     // Sensors
-    public ColorSensor colorSensor;
+    public ColorSensor tapeSensor;
     public TouchSensor touchSensor;
 
     // sensors used for pixel intake
     private ColorSensor pixelDetectorRight;
     private ColorSensor pixelDetectorLeft;
+
+    // distance sensor on the bucket to detect when bucket is close to backdrop
+    private DistanceSensor distanceBucket;
 
     // Constants
 //    final double SPEED_GAIN  =  0.1  ;   //  Forward Speed Control "Gain". eg: Ramp up to 50% power at a 25 inch error.   (0.50 / 25.0)
@@ -103,9 +109,10 @@ public class RobotClass {
         droneLauncher = hwmap.get(Servo.class, "DroneLauncher");
 
         touchSensor = hwmap.get(TouchSensor.class, "Touch");
-        colorSensor = hwmap.get(ColorSensor.class, "Color");
+        tapeSensor = hwmap.get(ColorSensor.class, "Color");
         pixelDetectorLeft = hwmap.get(ColorSensor.class, "PixelDetectorLeft");
         pixelDetectorRight = hwmap.get(ColorSensor.class, "PixelDetectorRight");
+        distanceBucket = hwmap.get(DistanceSensor.class, "DistanceBucket") ;
 
         // vision and processor initialization
         aprilTag = new AprilTagProcessor.Builder()
@@ -266,6 +273,24 @@ public class RobotClass {
         return false;
     }
 
+    public void driveToTape(int allianceColor) {
+        int distance = 0;
+        do {
+            if (allianceColor == RobotClass.RED) {
+                if (detectRed(tapeSensor)) {
+                    return;
+                }
+            } else if (allianceColor == RobotClass.BLUE) {
+                if (detectBlue(tapeSensor)) {
+                    return;
+                }
+            }
+
+            // Drive a short distance
+            moveRobotByDistance(1, 0,0);
+            distance++;
+        } while (distance > 5);
+    }
     public void parkCrane() throws InterruptedException {
         // Back up from backdrop
         frontLeft.setPower(-.5);
