@@ -12,7 +12,6 @@ import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
@@ -20,7 +19,6 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainCon
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.vision.VisionPortal;
-import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
@@ -29,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 
 @Autonomous
-public class InitRobotTest_Temporary extends LinearOpMode {
+public class AprilTagDetection extends LinearOpMode {
 
     // drive train motors
     public DcMotorEx frontLeft;
@@ -96,7 +94,7 @@ public class InitRobotTest_Temporary extends LinearOpMode {
 
 
     private static final int DESIRED_TAG_ID = 2;     // Choose the tag you want to approach or set to -1 for ANY tag.
-    private AprilTagDetection desiredTag = null;     // Used to hold the data for a detected AprilTag
+    private org.firstinspires.ftc.vision.apriltag.AprilTagDetection desiredTag = null;     // Used to hold the data for a detected AprilTag
 
 
     @Override
@@ -109,9 +107,8 @@ public class InitRobotTest_Temporary extends LinearOpMode {
 
         waitForStart();
 
-        if(opModeIsActive()) {
+        while (opModeIsActive()) {
 
-            visionPortal.stopStreaming();
             strafeToAprilTag(3);
 
 
@@ -582,7 +579,6 @@ public class InitRobotTest_Temporary extends LinearOpMode {
 
     void strafeToAprilTag(int tagNumber) throws InterruptedException {
 
-        visionPortal.resumeStreaming();
 
         //tag center - x = 3, y = 16.5
         double tagXPos = 3;
@@ -591,8 +587,8 @@ public class InitRobotTest_Temporary extends LinearOpMode {
         boolean targetFound = false;
         desiredTag  = null;
 
-        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
-        for (AprilTagDetection detection : currentDetections) {
+        List<org.firstinspires.ftc.vision.apriltag.AprilTagDetection> currentDetections = aprilTag.getDetections();
+        for (org.firstinspires.ftc.vision.apriltag.AprilTagDetection detection : currentDetections) {
             if ((detection.metadata != null) &&
                     (detection.id == tagNumber)  ){
                 targetFound = true;
@@ -636,19 +632,22 @@ public class InitRobotTest_Temporary extends LinearOpMode {
                 }
             }
 
+
             if (Math.abs(yPos - tagYPos) > threshold) {
 
                 if (yPos > tagYPos) {
 
-                    moveForward(25, 0.5);
+                    moveBackward(25, 0.1);
 
 
                 } else if (yPos < tagYPos) {
 
-                    moveBackward(25, 0.5);
+                    moveForward(25, 0.1);
 
                 }
             }
+
+
 
 
         }
