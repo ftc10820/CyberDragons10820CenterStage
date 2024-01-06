@@ -1,37 +1,35 @@
 package org.firstinspires.ftc.teamcode;
 
-
 import android.util.Size;
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
-import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.vision.VisionPortal;
-import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-
-@Autonomous
-public class InitRobotTest extends LinearOpMode {
+@TeleOp
+public class Qual1CenterStageTeleOp extends LinearOpMode {
+    // use the routines that are present in initRobotTest
+    // and ensure the same functions are used in Autonomous to reduce confusion
 
     // drive train motors
     public DcMotorEx frontLeft;
@@ -75,20 +73,16 @@ public class InitRobotTest extends LinearOpMode {
     private VisionPortal visionPortal;
     private TfodProcessor tfod;
     private AprilTagProcessor aprilTag;
+    boolean targetFound = false;
+    double xError = 0;
+    double yError = 0;
+
+
 
     // helper variables
     ElapsedTime eTime1 = new ElapsedTime() ;
     ElapsedTime eTime2 = new ElapsedTime() ;
 
-    // variables specific to AprilTags
-    final double DESIRED_DISTANCE = 12.0; //  this is how close the camera should get to the target (inches)
-
-    //  Set the GAIN constants to control the relationship between the measured position error, and how much power is
-    //  applied to the drive motors to correct the error.
-    //  Drive = Error * Gain    Make these values smaller for smoother control, or larger for a more aggressive response.
-    final double SPEED_GAIN  =  0.1  ;   //  Forward Speed Control "Gain". eg: Ramp up to 50% power at a 25 inch error.   (0.50 / 25.0)
-    final double STRAFE_GAIN =  0.015 ;   //  Strafe Speed Control "Gain".  eg: Ramp up to 25% power at a 25 degree Yaw error.   (0.25 / 25.0)
-    final double TURN_GAIN   =  0.01  ;   //  Turn Control "Gain".  eg: Ramp up to 25% power at a 25 degree error. (0.25 / 25.0)
     final double TFOD_Y_GAIN = 0.004;    // Forward Speed Control "Gain" for pixel intake.
     final double TFOD_X_GAIN = 0.002;    // Strafe Speed Control "Gain" for pixel intake.
     final double MAX_AUTO_SPEED = 0.8;   //  Clip the approach speed to this max value (adjust for your robot)
@@ -96,237 +90,79 @@ public class InitRobotTest extends LinearOpMode {
     final double MAX_AUTO_STRAFE= 0.6;   //  Clip the approach speed to this max value (adjust for your robot)
     final double MAX_AUTO_TURN  = 0.1;   //  Clip the turn speed to this max value (adjust for your robot)
 
+    double speedFactor = 0.8 ;
 
-    private static final int DESIRED_TAG_ID = 2;     // Choose the tag you want to approach or set to -1 for ANY tag.
-    private AprilTagDetection desiredTag = null;     // Used to hold the data for a detected AprilTag
-
-
-    @Override
     public void runOpMode() throws InterruptedException {
 
         initialize(); // this is only for initializing the drives, servos and sensors
         initTfod();
 
-        initAutonomous() ; // initialize servos for autonomous ; raise ramp and open intake
+        initAutonomous(); // initialize servos for autonomous ; raise ramp and open intake
+        telemetry.addData("Initialized.", "Press START..");
+        telemetry.update();
 
         waitForStart();
-
-        if(opModeIsActive()) {
-
-            boolean targetFound = false;
-            double  drive           = 0;        // Desired forward power/speed (-1 to +1)
-            double  strafe          = 0;        // Desired strafe power/speed (-1 to +1)
-            double xError = 0, yError = 0;
-            eTime1.reset();
-
-            // ok to shutoff live streaming
-            // visionPortal.stopStreaming();
-            // builder.enableLiveView(true) ;
-
-
-            targetFound = false ; // NOTE: comment this out to bypass pixel detection
-            while (eTime1.milliseconds() < 5000) { // assuming here that it wont take too much time to get to target
-            //while (opModeIsActive()) {
-                if (targetFound == true)
-                    break;
-                //strafeToAprilTag(3);
-                //telemetryTfod();
-                //telemetry.update() ;
-
-                List<Recognition> currentRecognitions = tfod.getRecognitions();
-                int numDetections = currentRecognitions.size();
-                telemetry.addData("# Objects Detected", numDetections);
-
-                // Step through the list of recognitions and determine which one to align to
-                // As a first step assume that you have just one recognition or take the one with the highest confidence
-                double curConf = 0.0 ;
-                double pixelx=0.0, pixely=0.0, pixelwidth=0.0, pixelheight=0.0 ;
-                for (Recognition recognition : currentRecognitions) {
-                    double x = (recognition.getLeft() + recognition.getRight()) / 2 ;
-                    double y = (recognition.getTop()  + recognition.getBottom()) / 2 ;
-
-                    if (recognition.getConfidence() >= curConf) {
-                        curConf = recognition.getConfidence() ;
-                        pixelx = x;
-                        pixely = y;
-                        pixelwidth = recognition.getWidth();
-                        pixelheight = recognition.getHeight();
-                    }
-                    telemetry.addData(""," ");
-                    telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100);
-                    telemetry.addData("- Position", "%.0f / %.0f", x, y);
-                    telemetry.addData("- Size", "%.0f x %.0f", recognition.getWidth(), recognition.getHeight());
-                }   // end for() loop
-
-                if (curConf != 0.0) {
-                    xError = 280-pixelx;
-                    yError = 330-pixely;
-
-                    if (yError < 30) { // 30 (pixels) is used as threshold here, but it can be changed to a different value
-                        targetFound = true;
-                    }
-
-                    drive  = Range.clip(yError * TFOD_Y_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
-                    strafe = Range.clip(xError * TFOD_X_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
-
-                    // there are times when there is no pixels detected
-                    // In that case, keep drive train enabled at low power for a small amount of time only
-                    // there needs to be some extra logic over here for that
-                    //
-                } else {
-                    drive = 0.05 ;
-                    strafe = 0 ;
-
-                    // for using this in teleop, replace above with gamepad input
-                    // see example RobotAutoDriveToAprilTagOmni.java example
-                    /*
-                    if (eTime2.milliseconds() < 2000) {
-                        break ;
-                    }
-                     */
-                }
-
-                telemetry.addData("- Error", "%.0f / %.0f", xError, yError);
-                telemetry.addData("- Power", "D: " + drive + " S: " + strafe);
-
-                moveRobot(drive,strafe,0);
-                telemetry.update();
-                sleep(20) ;
-
-            }
-            stopAllWheels();
-
-            if (targetFound == true) {
-                // move robot forward and let intake mechanism kick in using color sensor
-                moveForward(0.2);
-                eTime1.reset();
-                while (eTime1.milliseconds() < 5000) {
-                    telemetry.addData("Left Pixel: ", getPixelDetectionLeftVal() ) ;
-                    telemetry.addData("Right Pixel ", getPixelDetectionRightVal()) ;
-                    telemetry.update() ;
-                    if (isPixelDetectedLeft() || isPixelDetectedRight()) {
-                        stopAllWheels();
-                        intakePixel();
-                        break ;
-                    }
-                }
-                stopAllWheels();
-            }
-
-            /*
-            // testing suspension
-            driveSuspension(1.0);
-            sleep(5000) ;
-            stopSuspension();
-             */
-
-
-            /*
-            // testing intake of pixel
-            eTime1.reset();
-            //moveForward(0.8);
-            while (eTime1.milliseconds() < 50000) {
-                telemetry.addData("Left Pixel: ", getPixelDetectionLeftVal() ) ;
-                telemetry.addData("Right Pixel ", getPixelDetectionRightVal()) ;
-                telemetry.update() ;
-                if (isPixelDetectedLeft() && isPixelDetectedRight()) {
-                    stopAllWheels();
-                    intakePixel() ;
-                    break ;
-                }
-            }
-            stopAllWheels();
-            sleep(10000) ;
-            */
-
-
-
-            /*
-            // testing placing a pixel at high level
-            positionCraneHigh();
-            extendCraneUseSensor(0.8,10000, 12.5, 2500);
-            sleep(1000);
-            retractCraneHome(0.8, 1500);
-            sleep(1000);
-            positionCraneBase();
-            sleep(1000);
-            retractCraneHome(0.8, 10000);
-            sleep(1000);
-             */
-
-            /*
-            while(opModeIsActive()) {
-                telemetry.addData("Distance val:", distanceBucket.getDistance(DistanceUnit.CM) + " cm") ;
-                telemetry.update() ;
-                sleep(20) ;
-            }
-             */
-
-
-            /*
-            boolean targetFound     = false;    // Set to true when an AprilTag target is detected
-            double  drive           = 0;        // Desired forward power/speed (-1 to +1)
-            double  strafe          = 0;        // Desired strafe power/speed (-1 to +1)
-            double  turn            = 0;        // Desired turning power/speed (-1 to +1)
-
-            while(opModeIsActive()) {
-                targetFound = false;
-                desiredTag  = null;
-
-                // Step through the list of detected tags and look for a matching tag
-                List<AprilTagDetection> currentDetections = aprilTag.getDetections();
-                for (AprilTagDetection detection : currentDetections) {
-                    if ((detection.metadata != null) &&
-                            (detection.id == DESIRED_TAG_ID)  ){
-                        targetFound = true;
-                        desiredTag = detection;
-                        break;  // don't look any further.
-                    } else {
-                        telemetry.addData("Unknown Target", "Tag ID %d is not in TagLibrary\n", detection.id);
-                    }
-                }
-
-                // Tell the driver what we see, and what to do.
-                if (targetFound) {
-                    telemetry.addData("Target", "ID %d (%s)", desiredTag.id, desiredTag.metadata.name);
-                    telemetry.addData("Range",  "%5.1f inches", desiredTag.ftcPose.range);
-                    telemetry.addData("Bearing","%3.0f degrees", desiredTag.ftcPose.bearing);
-                    telemetry.addData("Yaw","%3.0f degrees", desiredTag.ftcPose.yaw);
-                } else {
-                    telemetry.addData("Target", "not found") ;
-                }
-
-                if (targetFound) {
-
-                    // Determine heading, range and Yaw (tag image rotation) error so we can use them to control the robot automatically.
-                    double  rangeError      = (desiredTag.ftcPose.range - DESIRED_DISTANCE);
-                    double  headingError    = desiredTag.ftcPose.bearing;
-                    double  yawError        = desiredTag.ftcPose.yaw;
-
-                    // Use the speed and turn "gains" to calculate how we want the robot to move.
-                    drive  = Range.clip(rangeError * SPEED_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
-                    turn   = Range.clip(headingError * TURN_GAIN, -MAX_AUTO_TURN, MAX_AUTO_TURN) ;
-                    strafe = Range.clip(-yawError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
-
-                    telemetry.addData("Auto","Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
-                } else {
-                    drive = 0 ;
-                    strafe = 0;
-                    turn = 0 ;
-                }
-                telemetry.update() ;
-
-                moveRobot(drive, strafe, turn);
-                sleep(10);
-            }
-
-             */
-
-
-
+        while (opModeIsActive()) {
 
         }
 
+            // for the drive train
+            double y = -gamepad1.left_stick_y; // forward or backward
+            double x = gamepad1.left_stick_x ; // strafing left or right
+            double rx = gamepad1.right_stick_x ; // turn left (anti-clockwise) or right (clockwise)
+
+            double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+            double frontLeftPower = (y + x + rx) / denominator;
+            double backLeftPower = (y - x + rx) / denominator;
+            double frontRightPower = (y - x - rx) / denominator;
+            double backRightPower = (y + x - rx) / denominator;
+
+
+            frontLeft.setPower(frontLeftPower * speedFactor);
+            backLeft.setPower(backLeftPower * speedFactor);
+            frontRight.setPower(frontRightPower * speedFactor);
+            backRight.setPower(backRightPower * speedFactor);
+
+            // individual controls for different sub-systems
+            if (gamepad1.a) {
+                intakePixel();  // does not throw pixel into bucket
+            }
+
+            if (gamepad1.b) {  // throws pixel into bucket
+                liftIntakePlatform();
+                sleep(2000) ;
+                initIntakePlatform();
+            }
+
+            if (gamepad1.y) {
+                extendCraneUseSensor(0.8, 5000, 12, 2000) ;
+            }
+
+            if (gamepad1.x) {
+                retractCraneHome(0.8, 2500);
+            }
+
+            if (gamepad2.y) {
+                positionCraneMedium();
+            } else if (gamepad2.a) {
+                positionCraneBase();
+            } else if (gamepad2.x) {
+                positionCraneLow();
+            } else if (gamepad2.b)
+                positionCraneHigh();
+
+            extendCrane(-gamepad2.left_stick_y);
+
+            driveSuspension(-gamepad2.right_stick_y);
+
+            if(gamepad2.right_trigger > 0){
+                releaseDrone();
+
+            }
+
+          //  if(gamepad2.left_bumper){
+           //     moveToPixelUseCamera();
+        //}
     }
 
     // TODO: Refactor initialize() to RobotClass. OpMode.initialize() should be robot = new RobotClass(); robot.initialize();
@@ -395,8 +231,8 @@ public class InitRobotTest extends LinearOpMode {
         // Create the TensorFlow processor by using a builder.
         tfod = new TfodProcessor.Builder()
 
-                 //Use setModelAssetName() if the TF Model is built in as an asset.
-                 //Use setModelFileName() if you have downloaded a custom team model to the Robot Controller.
+                //Use setModelAssetName() if the TF Model is built in as an asset.
+                //Use setModelFileName() if you have downloaded a custom team model to the Robot Controller.
                 .setModelAssetName(TFOD_MODEL_ASSET)
                 //.setModelFileName(TFOD_MODEL_FILE)
 
@@ -416,10 +252,10 @@ public class InitRobotTest extends LinearOpMode {
         // Choose a camera resolution. Not all cameras support all resolutions.
         builder.setCameraResolution(new Size(640, 480));
 
-         //Enable the RC preview (LiveView).  Set "false" to omit camera monitoring.
+        //Enable the RC preview (LiveView).  Set "false" to omit camera monitoring.
         builder.enableLiveView(true) ;
 
-         //Set the stream format; MJPEG uses less bandwidth than default YUY2.
+        //Set the stream format; MJPEG uses less bandwidth than default YUY2.
         //builder.setStreamFormat(VisionPortal.StreamFormat.YUY2);
 
         // Choose whether or not LiveView stops if no processors are enabled.
@@ -436,7 +272,7 @@ public class InitRobotTest extends LinearOpMode {
         // Set confidence threshold for TFOD recognitions, at any time.
         tfod.setMinResultConfidence(0.5f);
 
-         //Disable or re-enable the TFOD processor at any time.
+        //Disable or re-enable the TFOD processor at any time.
         //visionPortal.setProcessorEnabled(tfod, true);
 
     }
@@ -686,7 +522,7 @@ public class InitRobotTest extends LinearOpMode {
     }
 
     void driveSuspension(double power) {
-       suspension.setPower(power);
+        suspension.setPower(power);
     }
 
     void stopSuspension() {
@@ -710,10 +546,10 @@ public class InitRobotTest extends LinearOpMode {
         aprilTag = new AprilTagProcessor.Builder().build();
 
         // Create the vision portal by using a builder.
-            visionPortal = new VisionPortal.Builder()
-                    .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
-                    .addProcessor(aprilTag)
-                    .build();
+        visionPortal = new VisionPortal.Builder()
+                .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
+                .addProcessor(aprilTag)
+                .build();
 
         setManualExposure(6, 250);  // Use low exposure time to reduce motion blur
     }
@@ -778,6 +614,7 @@ public class InitRobotTest extends LinearOpMode {
         backRight.setPower(rightBackPower);
     }
 
+    /*
     void strafeToAprilTag(int tagNumber) throws InterruptedException {
 
         //tag center - x = 3, y = 16.5
@@ -834,6 +671,7 @@ public class InitRobotTest extends LinearOpMode {
         }
 
     }
+     */
 
     // function for intaking pixel after detection
     // lower ramp, engaging bucket, closing intake servos
@@ -841,16 +679,91 @@ public class InitRobotTest extends LinearOpMode {
         // sleep values in this function need to be modified
         lowerRamp();
         readyIntakePlatform();
-        sleep (1000) ;
+        sleep(1000);
         closeRightIntake();
         closeLeftIntake();
-        sleep(3000) ;
+        sleep(3000);
         openRightIntake();
         openLeftIntake();
 
         liftRamp();
         initIntakePlatform();
-        sleep(2000) ;
+        sleep(2000);
+    }
+        void moveToPixelUseCamera()  {
+
+        double drive = 0;
+        double strafe = 0;
+
+            targetFound = false ; // NOTE: comment this out to bypass pixel detection
+            while (eTime1.milliseconds() < 5000) { // assuming here that it wont take too much time to get to target
+                //while (opModeIsActive()) {
+                if (targetFound == true)
+                    break;
+                //strafeToAprilTag(3);
+                //telemetryTfod();
+                //telemetry.update() ;
+
+                List<Recognition> currentRecognitions = tfod.getRecognitions();
+                int numDetections = currentRecognitions.size();
+                telemetry.addData("# Objects Detected", numDetections);
+
+                // Step through the list of recognitions and determine which one to align to
+                // As a first step assume that you have just one recognition or take the one with the highest confidence
+                double curConf = 0.0 ;
+                double pixelx=0.0, pixely=0.0, pixelwidth=0.0, pixelheight=0.0 ;
+                for (Recognition recognition : currentRecognitions) {
+                    double x = (recognition.getLeft() + recognition.getRight()) / 2 ;
+                    double y = (recognition.getTop()  + recognition.getBottom()) / 2 ;
+
+                    if (recognition.getConfidence() >= curConf) {
+                        curConf = recognition.getConfidence() ;
+                        pixelx = x;
+                        pixely = y;
+                        pixelwidth = recognition.getWidth();
+                        pixelheight = recognition.getHeight();
+                    }
+                    telemetry.addData(""," ");
+                    telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100);
+                    telemetry.addData("- Position", "%.0f / %.0f", x, y);
+                    telemetry.addData("- Size", "%.0f x %.0f", recognition.getWidth(), recognition.getHeight());
+                }   // end for() loop
+
+                if (curConf != 0.0) {
+                    xError = 280-pixelx;
+                    yError = 330-pixely;
+
+                    if (yError < 30) { // 30 (pixels) is used as threshold here, but it can be changed to a different value
+                        targetFound = true;
+                    }
+
+                    drive  = Range.clip(yError * TFOD_Y_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
+                    strafe = Range.clip(xError * TFOD_X_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
+
+                    // there are times when there is no pixels detected
+                    // In that case, keep drive train enabled at low power for a small amount of time only
+                    // there needs to be some extra logic over here for that
+                    //
+                } else {
+                    drive = 0.05 ;
+                    strafe = 0 ;
+
+                    // for using this in teleop, replace above with gamepad input
+                    // see example RobotAutoDriveToAprilTagOmni.java example
+                    /*
+                    if (eTime2.milliseconds() < 2000) {
+                        break ;
+                    }
+                     */
+                }
+
+                telemetry.addData("- Error", "%.0f / %.0f", xError, yError);
+                telemetry.addData("- Power", "D: " + drive + " S: " + strafe);
+
+                moveRobot(drive,strafe,0);
+                telemetry.update();
+                sleep(20) ;
+        }
 
     }
 
