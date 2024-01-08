@@ -233,13 +233,17 @@ public class RobotClass {
 
         // Make sure camera is streaming before we try to set the exposure controls
         if (visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING) {
-            telemetry.addData("Camera", "Waiting");
-            telemetry.update();
+            if (this.telemetry != null) {
+                this.telemetry.addData("Camera", "Waiting");
+                this.telemetry.update();
+            }
             while (!stopManualExposure && (visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING)) {
                 Thread.sleep(20);
             }
-            telemetry.addData("Camera", "Ready");
-            telemetry.update();
+            if (this.telemetry != null) {
+                this.telemetry.addData("Camera", "Ready");
+                this.telemetry.update();
+            }
         }
 
         // Set camera controls unless we are stopping.
