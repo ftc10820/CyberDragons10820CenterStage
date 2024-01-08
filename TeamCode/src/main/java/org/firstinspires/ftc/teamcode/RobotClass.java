@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode;
 
 import android.util.Size;
 
+import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
@@ -12,7 +14,11 @@ import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.vision.VisionPortal;
@@ -22,6 +28,7 @@ import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
 import java.util.List;
 import java.lang.Math;
+import java.util.concurrent.TimeUnit;
 
 public class RobotClass {
     public final static int RED = 1;
@@ -29,6 +36,7 @@ public class RobotClass {
 
     public final static int MAX_CRANE_POSITION = 6089;
 
+    private Telemetry telemetry = null;
     private SampleMecanumDrive  rrDrive;
 
     // raw drivetrain
@@ -86,6 +94,10 @@ public class RobotClass {
 
     final double MAX_AUTO_STRAFE= 0.6;   //  Clip the approach speed to this max value (adjust for your robot)
 //    final double MAX_AUTO_TURN  = 0.1;   //  Clip the turn speed to this max value (adjust for your robot)
+
+    public void setTelemetry(Telemetry t) {
+        this.telemetry = t;
+    }
 
     public void initialize(HardwareMap hwmap) {
         final String TFOD_MODEL_ASSET = "pixel_centerstage10820.tflite";
@@ -168,7 +180,7 @@ public class RobotClass {
             if (!touchSensor.isPressed()) {
                 crane.setPower(-.1);
                 while (!touchSensor.isPressed()) {
-                    Thread.sleep(10);
+                    Thread.sleep(40);
                 }
             }
             crane.setPower(0);
@@ -199,7 +211,50 @@ public class RobotClass {
     }
 
     public void moveRobotByDistance(double x, double y, double yaw) {
-        // TODO: Use RoadRunner to drive by x, y, yaw (robot coordinates)
+        // Use RoadRunner to drive by x, y, yaw (robot coordinates)
+        Trajectory trajectory = rrDrive.trajectoryBuilder(rrDrive.getPoseEstimate())
+                .lineToLinearHeading(new Pose2d(x,y,yaw))
+                .build();
+        rrDrive.followTrajectory(trajectory);
+    }
+
+    private boolean stopManualExposure = false;
+    public void stopManualExposure() {
+        stopManualExposure = true;
+    }
+
+    public void setManualExposure(VisionPortal visionPortal, int exposureMS, int gain) throws InterruptedException {
+        stopManualExposure = false;
+
+        // Wait for the camera to be open, then use the controls
+        if (visionPortal == null) {
+            return;
+        }
+
+        // Make sure camera is streaming before we try to set the exposure controls
+        if (visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING) {
+            telemetry.addData("Camera", "Waiting");
+            telemetry.update();
+            while (!stopManualExposure && (visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING)) {
+                Thread.sleep(20);
+            }
+            telemetry.addData("Camera", "Ready");
+            telemetry.update();
+        }
+
+        // Set camera controls unless we are stopping.
+        if (!stopManualExposure) {
+            ExposureControl exposureControl = visionPortal.getCameraControl(ExposureControl.class);
+            if (exposureControl.getMode() != ExposureControl.Mode.Manual) {
+                exposureControl.setMode(ExposureControl.Mode.Manual);
+                Thread.sleep(50);
+            }
+            exposureControl.setExposure((long)exposureMS, TimeUnit.MILLISECONDS);
+            Thread.sleep(20);
+            GainControl gainControl = visionPortal.getCameraControl(GainControl.class);
+            gainControl.setGain(gain);
+            Thread.sleep(20);
+        }
     }
 
     public void moveRobotByPower(double x, double y, double yaw) {
@@ -228,6 +283,90 @@ public class RobotClass {
         backRight.setPower(rightBackPower);
     }
 
+    public void moveBackward(double speed) {
+        frontLeft.setPower(-speed);
+        frontRight.setPower(-speed);
+        backLeft.setPower(-speed);
+        backRight.setPower(-speed);
+    }
+
+    public void moveBackward(int time, double speed) throws InterruptedException {
+        moveBackward(speed);
+        Thread.sleep(time);
+        stopAllWheels();
+    }
+
+    public void moveForward(double speed) {
+        frontLeft.setPower(speed);
+        frontRight.setPower(speed);
+        backLeft.setPower(speed);
+        backRight.setPower(speed);
+    }
+
+    public void moveForward(int time, double speed) throws InterruptedException {
+        moveForward(speed);
+        Thread.sleep(time);
+        stopAllWheels();
+    }
+
+    public void moveLeft(double speed) {
+        frontLeft.setPower(-speed);
+        frontRight.setPower(speed);
+        backLeft.setPower(speed);
+        backRight.setPower(-speed);
+    }
+    public void moveLeft(int time, double speed) throws InterruptedException {
+        moveLeft(speed);
+        Thread.sleep(time);
+        stopAllWheels();
+    }
+
+    public void moveRight(double speed) {
+        frontLeft.setPower(speed);
+        frontRight.setPower(-speed);
+        backLeft.setPower(-speed);
+        backRight.setPower(speed);
+    }
+
+    public void moveRight(int time, double speed) throws InterruptedException {
+        moveRight(speed);
+        Thread.sleep(time);
+        stopAllWheels();
+    }
+
+    public void turnRight(double speed) {
+        frontLeft.setPower(speed);
+        frontRight.setPower(-speed);
+        backLeft.setPower(speed);
+        backRight.setPower(-speed);
+    }
+
+    public void turnRight(int time, double speed) throws InterruptedException {
+        turnRight(speed);
+        Thread.sleep(time);
+        stopAllWheels();
+    }
+
+    public void turnLeft(double speed) {
+        frontLeft.setPower(-speed);
+        frontRight.setPower(speed);
+        backLeft.setPower(-speed);
+        backRight.setPower(speed);
+    }
+
+    public void turnLeft(int time, double speed) throws InterruptedException {
+        turnLeft(speed);
+        Thread.sleep(time);
+        stopAllWheels();
+    }
+
+    public void stopAllWheels() {
+        frontLeft.setPower(0);
+        frontRight.setPower(0);
+        backLeft.setPower(0);
+        backRight.setPower(0);
+    }
+
     public double[] visionCoordinates() {
 
         double[] coordinates = new double[2];
@@ -245,14 +384,14 @@ public class RobotClass {
     public boolean detectBlue(ColorSensor cs) {
         if (cs == null) { return false; }
         if (cs.blue() > 0) { return false; }
-        double threshold = cs.blue()/2;
+        double threshold = (double)cs.blue()/2;
         return (cs.red() < threshold && cs.green() < threshold);
     }
 
     public boolean detectRed(ColorSensor cs) {
         if (cs == null) { return false; }
         if (cs.red() > 0) { return false; }
-        double threshold = cs.red()/2;
+        double threshold = (double)cs.red()/2;
         return (cs.blue() < threshold && cs.green() < threshold);
     }
 
@@ -305,22 +444,26 @@ public class RobotClass {
     }
 
     public void driveToTape(int allianceColor) {
-        int distance = 0;
-        do {
-            if (allianceColor == RobotClass.RED) {
-                if (detectRed(tapeSensor)) {
-                    return;
+        try {
+            for (int distance = 0; distance < 6; distance++) {
+                if (allianceColor == RobotClass.RED) {
+                    if (detectRed(tapeSensor)) {
+                        stopAllWheels();
+                        return;
+                    }
+                } else if (allianceColor == RobotClass.BLUE) {
+                    if (detectBlue(tapeSensor)) {
+                        stopAllWheels();
+                        return;
+                    }
                 }
-            } else if (allianceColor == RobotClass.BLUE) {
-                if (detectBlue(tapeSensor)) {
-                    return;
-                }
-            }
 
-            // Drive a short distance
-            moveRobotByDistance(1, 0,0);
-            distance++;
-        } while (distance > 5);
+                // Drive a short distance
+                moveForward(0.3);
+            }
+        } finally {
+            stopAllWheels();
+        }
     }
     public void parkCrane() throws InterruptedException {
         // Back up from backdrop
@@ -354,17 +497,41 @@ public class RobotClass {
             return;
         }
 
-        boolean isTouched = false;
         if (touchSensor.isPressed() && power < 0){
-            isTouched = true;
             crane.setPower(0);
-        } else if (power > 0) {
-            isTouched = false;
+        } else {
             crane.setPower(power);
         }
-        if(isTouched == false) {
-            crane.setPower(power);
+    }
+
+    public void extendCraneUseSensor(double speed) {
+        // extend crane till a timeout value or till the sensor detects closeness to backdrop
+        final int EXTEND_TIMEOUT = 2000 ; // timeout depends on the speed
+        final double BACKDROP_DIST_IN_CM = 8.0 ;
+        ElapsedTime eTime1 = new ElapsedTime() ;
+
+        eTime1.reset();
+        crane.setPower(speed);
+        while((distanceBucket.getDistance(DistanceUnit.CM) > BACKDROP_DIST_IN_CM) && (eTime1.milliseconds() < EXTEND_TIMEOUT)) {
+
         }
+        setCranePower(0);
+    }
+
+    public void extendCraneUseSensor(double speed, int timeout_milli, double backdrop_dist_cm, int slow_time) throws InterruptedException {
+        // extend crane till given timeout value or till the sensor detects proximity to backdrop based on given distance
+        // NOTE: timeout depends on the speed
+        ElapsedTime eTime1 = new ElapsedTime() ;
+        eTime1.reset();
+        crane.setPower(speed);
+        while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (eTime1.milliseconds() < timeout_milli)) {
+
+        }
+
+        // Extend to backdrop
+        crane.setPower(speed*0.2);
+        Thread.sleep(slow_time) ;
+        setCranePower(0);
     }
 
     public void setCraneAnglePosition(double pos) {
@@ -375,7 +542,7 @@ public class RobotClass {
         droneLauncher.setPosition(1);
     }
 
-    void setSuspensionPower(double power) {
+    public void setSuspensionPower(double power) {
         suspension.setPower(power);
     }
 
@@ -436,6 +603,24 @@ public class RobotClass {
     public void resetRampIndexer() {
         resetRamp();
         resetIndexer();
+    }
+
+    final int PIXEL_DETECTION_THRESHOLD = 110 ;
+    // Pixel detection uses alpha; could use others but this seems the most straightforward
+    // threshold needs to be calibrated at the match site
+    public boolean isPixelDetectedLeft() {
+        return (pixelDetectorLeft.alpha() > PIXEL_DETECTION_THRESHOLD) ;
+    }
+
+    public int getPixelDetectionLeftVal() {
+        return pixelDetectorLeft.alpha() ;
+    }
+
+    public boolean isPixelDetectedRight() {
+        return (pixelDetectorRight.alpha() > PIXEL_DETECTION_THRESHOLD) ;
+    }
+    public int getPixelDetectionRightVal() {
+        return pixelDetectorRight.alpha() ;
     }
 
     public boolean driveToPixel(ElapsedTime eTime1) throws InterruptedException {
@@ -544,6 +729,146 @@ public class RobotClass {
 
         // Reset ramp and indexer
         resetRampIndexer();
+    }
+
+    public void moveToPixelUseCamera() throws InterruptedException {
+        double drive = 0;
+        double strafe = 0;
+        ElapsedTime eTime1 = new ElapsedTime();
+        eTime1.reset();
+
+        boolean targetFound = false ; // NOTE: comment this out to bypass pixel detection
+        while (eTime1.milliseconds() < 5000) { // assuming here that it wont take too much time to get to target
+            //while (opModeIsActive()) {
+            if (targetFound == true)
+                break;
+            //strafeToAprilTag(3);
+            //telemetryTfod();
+            //telemetry.update() ;
+
+            List<Recognition> currentRecognitions = tfod.getRecognitions();
+            int numDetections = currentRecognitions.size();
+            if (this.telemetry != null) {this.telemetry.addData("# Objects Detected", numDetections); }
+
+            // Step through the list of recognitions and determine which one to align to
+            // As a first step assume that you have just one recognition or take the one with the highest confidence
+            double curConf = 0.0 ;
+            double pixelx=0.0, pixely=0.0, pixelwidth=0.0, pixelheight=0.0 ;
+            for (Recognition recognition : currentRecognitions) {
+                double x = (recognition.getLeft() + recognition.getRight()) / 2 ;
+                double y = (recognition.getTop()  + recognition.getBottom()) / 2 ;
+
+                if (recognition.getConfidence() >= curConf) {
+                    curConf = recognition.getConfidence() ;
+                    pixelx = x;
+                    pixely = y;
+                    pixelwidth = recognition.getWidth();
+                    pixelheight = recognition.getHeight();
+                }
+                if (this.telemetry != null) {
+                    this.telemetry.addData("", " ");
+                    this.telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100);
+                    this.telemetry.addData("- Position", "%.0f / %.0f", x, y);
+                    this.telemetry.addData("- Size", "%.0f x %.0f", recognition.getWidth(), recognition.getHeight());
+                }
+            }   // end for() loop
+
+            double xError = -1;
+            double yError = -1;
+            if (curConf != 0.0) {
+                xError = 280-pixelx;
+                yError = 330-pixely;
+
+                if (yError < 30) { // 30 (pixels) is used as threshold here, but it can be changed to a different value
+                    targetFound = true;
+                }
+
+                drive  = Range.clip(yError * TFOD_Y_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
+                strafe = Range.clip(xError * TFOD_X_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
+
+                // there are times when there is no pixels detected
+                // In that case, keep drive train enabled at low power for a small amount of time only
+                // there needs to be some extra logic over here for that
+                //
+            } else {
+                drive = 0.05 ;
+                strafe = 0 ;
+
+                // for using this in teleop, replace above with gamepad input
+                // see example RobotAutoDriveToAprilTagOmni.java example
+                    /*
+                    if (eTime2.milliseconds() < 2000) {
+                        break ;
+                    }
+                     */
+            }
+
+            if (this.telemetry != null) {
+                this.telemetry.addData("- Error", "%.0f / %.0f", xError, yError);
+                this.telemetry.addData("- Power", "D: " + drive + " S: " + strafe);
+            }
+
+            moveRobotByPower(drive,strafe,0);
+            if (this.telemetry != null) this.telemetry.update();
+            Thread.sleep(20) ;
+        }
+
+    }
+
+    public void strafeToAprilTag(int tagNumber) throws InterruptedException {
+        //tag center - x = 3, y = 16.5
+        double tagXPos = 3;
+        double tagYPos = 16.5;
+
+        boolean targetFound = false;
+        org.firstinspires.ftc.vision.apriltag.AprilTagDetection desiredTag = null;     // Used to hold the data for a detected AprilTag
+
+        List<org.firstinspires.ftc.vision.apriltag.AprilTagDetection> currentDetections = aprilTag.getDetections();
+        for (org.firstinspires.ftc.vision.apriltag.AprilTagDetection detection : currentDetections) {
+            if ((detection.metadata != null) &&
+                    (detection.id == tagNumber)  ){
+                targetFound = true;
+                desiredTag = detection;
+                break;  // don't look any further.
+            } else {
+                if (this.telemetry != null) this.telemetry.addData("Unknown Target", "Tag ID %d is not in TagLibrary\n", detection.id);
+            }
+        }
+
+        if (this.telemetry != null) {
+            if (targetFound) {
+                this.telemetry.addData("Target", "ID %d (%s)", desiredTag.id, desiredTag.metadata.name);
+                this.telemetry.addData("X Value: ", desiredTag.ftcPose.x);
+                this.telemetry.addData("Y Value: ", desiredTag.ftcPose.y);
+            } else {
+                this.telemetry.addData("Target", "not found");
+            }
+
+            this.telemetry.update();
+        }
+
+        if (desiredTag != null) {
+
+            double xPos = desiredTag.ftcPose.x;
+            double yPos = desiredTag.ftcPose.y;
+            double threshold = 0.5;
+
+            if (Math.abs(xPos - tagXPos) > threshold) {
+                if (xPos > tagXPos) {
+                    moveLeft(25, 0.5);
+                } else if (xPos < tagXPos) {
+                    moveRight(25, 0.5);
+                }
+            }
+
+            if (Math.abs(yPos - tagYPos) > threshold) {
+                if (yPos > tagYPos) {
+                    moveBackward(25, 0.1);
+                } else if (yPos < tagYPos) {
+                    moveForward(25, 0.1);
+                }
+            }
+        }
     }
 
 }
