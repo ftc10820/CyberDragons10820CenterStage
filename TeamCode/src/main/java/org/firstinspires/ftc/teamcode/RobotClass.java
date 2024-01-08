@@ -27,7 +27,7 @@ public class RobotClass {
     public final static int RED = 1;
     public final static int BLUE = 2;
 
-    public final static int MAX_CRANE_POSITION = 2000;
+    public final static int MAX_CRANE_POSITION = 6089;
 
     private SampleMecanumDrive  rrDrive;
 
@@ -163,14 +163,20 @@ public class RobotClass {
         // Set confidence threshold for TFOD recognitions, at any time.
         tfod.setMinResultConfidence(0.5f);
 
-        // Initialize crane encoder to zero when fully retracted
-        if (!touchSensor.isPressed()) {
-            crane.setPower(-.1);
-            while (!touchSensor.isPressed()) {
-                Thread.sleep(10);
+        try {
+            // Initialize crane encoder to zero when fully retracted
+            if (!touchSensor.isPressed()) {
+                crane.setPower(-.1);
+                while (!touchSensor.isPressed()) {
+                    Thread.sleep(10);
+                }
             }
+            crane.setPower(0);
+            crane.setTargetPosition(0);
+        } catch (InterruptedException ex) {
+        } finally {
+            crane.setPower(0);
         }
-        crane.setTargetPosition(0);
     }
 
     public boolean setPoseFromAprilTag(){
