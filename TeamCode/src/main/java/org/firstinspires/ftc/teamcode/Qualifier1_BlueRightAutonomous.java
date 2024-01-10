@@ -107,6 +107,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
 
         initialize();
+        initIntakePlatform();
         closeRightIntake();
 
         vision = new VisionSubsystem(hardwareMap);
@@ -143,7 +144,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 .build();
 
         Trajectory backstage_2 = drive.trajectoryBuilder(backstage_1.end())
-                .forward(108.0)
+                .lineTo(new Vector2d(42, 10))
                 .build();
 
         Trajectory zone2_traj1 = drive.trajectoryBuilder(startPose)
@@ -166,8 +167,8 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 .forward(6.0)
                 .build();
 
-        Trajectory backstage_3 = drive.trajectoryBuilder(backstage_2.end())
-                .strafeRight(24.0)
+        Trajectory backstage_3 = drive.trajectoryBuilder(backstage_2.end().plus(new Pose2d(0,0, Math.toRadians(180))))
+                .lineTo(new Vector2d(42, 36))
                 .build();
 
         Trajectory adjustment = drive.trajectoryBuilder(backstage_3.end())
@@ -211,7 +212,6 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 drive.followTrajectory(backstage_2);
                 drive.turn(Math.toRadians(180));
                 drive.followTrajectory(backstage_3);
-                drive.followTrajectory(adjustment);
 
 
 
@@ -236,7 +236,6 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 drive.followTrajectory(backstage_2);
                 drive.turn(Math.toRadians(180));
                 drive.followTrajectory(backstage_3);
-                drive.followTrajectory(adjustment);
 
 
 
@@ -262,6 +261,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
             extendCraneUseSensor(0.8,10000, 12.5, 1500);
             sleep(250);
             positionCraneMedium();
+            sleep(250);
             retractCraneHome(0.8, 2500);
             sleep(250);
 

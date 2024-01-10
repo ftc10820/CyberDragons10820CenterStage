@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode;
 
 import android.util.Size;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.ColorSensor;
@@ -20,7 +19,6 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainCon
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.vision.VisionPortal;
-import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
@@ -28,7 +26,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @TeleOp
-public class Qual1CenterStageTeleOp extends LinearOpMode {
+public class Qualifier1_TeleOp extends LinearOpMode {
     // use the routines that are present in initRobotTest
     // and ensure the same functions are used in Autonomous to reduce confusion
 
@@ -91,7 +89,9 @@ public class Qual1CenterStageTeleOp extends LinearOpMode {
     ElapsedTime eTime1 = new ElapsedTime() ;
     ElapsedTime eTime2 = new ElapsedTime() ;
 
-    double speedFactor = 0.8 ;
+    double speedFactor = 1.0 ;
+
+    int craneMax = 4500;
 
     public void runOpMode() throws InterruptedException {
 
@@ -99,6 +99,7 @@ public class Qual1CenterStageTeleOp extends LinearOpMode {
         initTfod();
 
         initAutonomous(); // initialize servos for autonomous ; raise ramp and open intake
+        telemetry.addData("encoder value: ", crane.getCurrentPosition());
         telemetry.addData("Initialized.", "Press START..");
         telemetry.update();
 
@@ -107,6 +108,9 @@ public class Qual1CenterStageTeleOp extends LinearOpMode {
         visionPortal.setProcessorEnabled(tfod, false);
 
         while (opModeIsActive()) {
+
+            telemetry.addData("encoder value: ", crane.getCurrentPosition());
+            telemetry.update();
 
             // enabled tfod dection is left bumper is pressed
             if ((streamingEnabled == false) && (gamepad1.left_bumper)) {
@@ -151,15 +155,12 @@ public class Qual1CenterStageTeleOp extends LinearOpMode {
                 intakePixel();  // does not throw pixel into bucket
             }
 
-            if (gamepad1.b) {  // throws pixel into bucket
-                liftIntakePlatform();
-                sleep(2000);
-                initIntakePlatform();
+            if (gamepad1.b) {
             }
 
             if (gamepad1.y) {
                 extendCraneUseSensor(0.8, 5000, 15, 2500) ;
-                liftCraneSlightly(0.1);
+                liftCraneSlightly(0.2);
                 sleep(50) ;
                 retractCraneHome(0.8, 1000);
                 positionCraneBase();
@@ -194,7 +195,17 @@ public class Qual1CenterStageTeleOp extends LinearOpMode {
                 stopCrane();
             }
 
-            if(gamepad2.dpad_up) {
+            if(gamepad2.dpad_up) { // throws pixel into bucket
+
+                liftIntakePlatform();
+
+
+            }
+
+            if(gamepad2.dpad_down) {
+
+                initIntakePlatform();
+
 
             }
 
@@ -245,6 +256,9 @@ public class Qual1CenterStageTeleOp extends LinearOpMode {
         crane = hardwareMap.get(DcMotorEx.class, "Crane");
         crane.setDirection(DcMotorEx.Direction.REVERSE);
         crane.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        crane.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        crane.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         //suspension motor
         suspension = hardwareMap.get(DcMotorEx.class, "Suspension");
@@ -502,13 +516,32 @@ public class Qual1CenterStageTeleOp extends LinearOpMode {
         // NOTE: timeout depends on the speed
         eTime1.reset();
         crane.setPower(speed);
-        while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (eTime1.milliseconds() < timeout_milli)) {
+        while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (crane.getCurrentPosition() < craneMax)) {
 
         }
         stopCrane();
-        crane.setPower(speed*0.2);
-        sleep(slow_time) ;
-        stopCrane();
+        sleep(500);
+
+        if (crane.getCurrentPosition() < 4000) {
+
+
+            crane.setPower(speed*0.2);
+
+            sleep(slow_time);
+            stopCrane();
+
+/*
+            crane.setTargetPosition(crane.getCurrentPosition() + (8 * 63)); // calculate 63 encoder ticks per cm
+            crane.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            crane.setPower(speed*0.2);
+
+ */
+
+        }
+
+
+
+
     }
     void retractCrane(double speed) {
         crane.setPower(-1.0*speed);
