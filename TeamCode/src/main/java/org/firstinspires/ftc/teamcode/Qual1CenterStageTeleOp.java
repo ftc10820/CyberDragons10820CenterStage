@@ -106,7 +106,6 @@ public class Qual1CenterStageTeleOp extends LinearOpMode {
         // disable tfod at the start
         visionPortal.setProcessorEnabled(tfod, false);
 
-        int testCounter = 0;
         while (opModeIsActive()) {
 
             // enabled tfod dection is left bumper is pressed
@@ -196,10 +195,7 @@ public class Qual1CenterStageTeleOp extends LinearOpMode {
             }
 
             if(gamepad2.dpad_up) {
-                testCounter++ ;
-                telemetry.addData("Counter val:", testCounter) ;
-                telemetry.update() ;
-                sleep(20) ;
+
             }
 
         }
