@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import android.util.Size;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.ColorSensor;
@@ -152,7 +153,7 @@ public class Qual1CenterStageTeleOp extends LinearOpMode {
 
             if (gamepad1.b) {  // throws pixel into bucket
                 liftIntakePlatform();
-                sleep(1500) ;
+                sleep(2000);
                 initIntakePlatform();
             }
 
@@ -182,7 +183,7 @@ public class Qual1CenterStageTeleOp extends LinearOpMode {
 
             driveSuspension(-gamepad2.right_stick_y);
 
-            if(gamepad2.right_trigger > 0){
+            if (gamepad2.right_trigger > 0) {
                 releaseDrone();
             }
 

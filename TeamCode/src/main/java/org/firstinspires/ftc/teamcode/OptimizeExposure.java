@@ -64,6 +64,7 @@ import java.util.concurrent.TimeUnit;
  */
 
 @TeleOp
+@Disabled
 public class OptimizeExposure extends LinearOpMode
 {
     private VisionPortal visionPortal = null;        // Used to manage the video source.

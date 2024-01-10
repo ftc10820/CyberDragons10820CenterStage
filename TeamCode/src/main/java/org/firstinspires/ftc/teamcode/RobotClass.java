@@ -27,6 +27,8 @@ public class RobotClass {
     public final static int RED = 1;
     public final static int BLUE = 2;
 
+    public final static int MAX_CRANE_POSITION = 2000;
+
     private SampleMecanumDrive  rrDrive;
 
     // raw drivetrain
@@ -106,6 +108,8 @@ public class RobotClass {
 
         //crane motor
         crane = hwmap.get(DcMotorEx.class, "Crane");
+        crane.setDirection(DcMotorEx.Direction.REVERSE);
+        crane.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         //suspension motor
         suspension = hwmap.get(DcMotorEx.class, "Suspension");
@@ -158,6 +162,24 @@ public class RobotClass {
 
         // Set confidence threshold for TFOD recognitions, at any time.
         tfod.setMinResultConfidence(0.5f);
+
+        // Initialize crane encoder to zero when fully retracted
+        if (!touchSensor.isPressed()) {
+            crane.setPower(-.1);
+            while (!touchSensor.isPressed()) {
+                try {
+
+                    Thread.sleep(10);
+                }
+
+                    catch(InterruptedException error){
+
+
+                    };
+
+            }
+        }
+        crane.setTargetPosition(0);
     }
 
     public boolean setPoseFromAprilTag(){
@@ -322,7 +344,7 @@ public class RobotClass {
         craneAngle.setPosition(0);
 
         // Retract crane until the touch sensor is pressed
-        crane.setPower(1);
+        crane.setPower(-1);
         while(!touchSensor.isPressed()){}
 
         // Stop the crane
@@ -330,11 +352,16 @@ public class RobotClass {
     }
 
     public void setCranePower(double power) {
+        // Make sure encoder is not at max
+        if (crane.getTargetPosition() >= MAX_CRANE_POSITION) {
+            return;
+        }
+
         boolean isTouched = false;
-        if (touchSensor.isPressed() && power > 0){
+        if (touchSensor.isPressed() && power < 0){
             isTouched = true;
             crane.setPower(0);
-        } else if (power < 0) {
+        } else if (power > 0) {
             isTouched = false;
             crane.setPower(power);
         }
