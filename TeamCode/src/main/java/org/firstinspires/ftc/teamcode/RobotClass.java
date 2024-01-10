@@ -167,7 +167,16 @@ public class RobotClass {
         if (!touchSensor.isPressed()) {
             crane.setPower(-.1);
             while (!touchSensor.isPressed()) {
-                Thread.sleep(10);
+                try {
+
+                    Thread.sleep(10);
+                }
+
+                    catch(InterruptedException error){
+
+
+                    };
+
             }
         }
         crane.setTargetPosition(0);

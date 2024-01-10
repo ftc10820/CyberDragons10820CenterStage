@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import android.util.Size;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.ColorSensor;
@@ -104,12 +105,11 @@ public class Qual1CenterStageTeleOp extends LinearOpMode {
         waitForStart();
         while (opModeIsActive()) {
 
-        }
 
             // for the drive train
             double y = -gamepad1.left_stick_y; // forward or backward
-            double x = gamepad1.left_stick_x ; // strafing left or right
-            double rx = gamepad1.right_stick_x ; // turn left (anti-clockwise) or right (clockwise)
+            double x = gamepad1.left_stick_x; // strafing left or right
+            double rx = gamepad1.right_stick_x; // turn left (anti-clockwise) or right (clockwise)
 
             double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
             double frontLeftPower = (y + x + rx) / denominator;
@@ -130,12 +130,12 @@ public class Qual1CenterStageTeleOp extends LinearOpMode {
 
             if (gamepad1.b) {  // throws pixel into bucket
                 liftIntakePlatform();
-                sleep(2000) ;
+                sleep(2000);
                 initIntakePlatform();
             }
 
             if (gamepad1.y) {
-                extendCraneUseSensor(0.8, 5000, 12, 2000) ;
+                extendCraneUseSensor(0.8, 5000, 12, 2000);
             }
 
             if (gamepad1.x) {
@@ -155,10 +155,12 @@ public class Qual1CenterStageTeleOp extends LinearOpMode {
 
             driveSuspension(-gamepad2.right_stick_y);
 
-            if(gamepad2.right_trigger > 0){
+            if (gamepad2.right_trigger > 0) {
                 releaseDrone();
 
             }
+
+        }
 
           //  if(gamepad2.left_bumper){
            //     moveToPixelUseCamera();
