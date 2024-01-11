@@ -48,6 +48,7 @@ import java.util.List;
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list.
  */
 @TeleOp
+@Disabled
 public class VisionTest extends LinearOpMode {
 
     RobotClass robot;
@@ -74,9 +75,9 @@ public class VisionTest extends LinearOpMode {
 
                 // Save CPU resources; can resume streaming when needed.
                 if (gamepad1.dpad_down) {
-                    robot.camera.stopStreaming();
+                    robot.camera1.stopStreaming();
                 } else if (gamepad1.dpad_up) {
-                    robot.camera.resumeStreaming();
+                    robot.camera1.resumeStreaming();
                 }
 
                 // Share the CPU.
@@ -85,7 +86,7 @@ public class VisionTest extends LinearOpMode {
         }
 
         // Save more CPU resources when camera is no longer needed.
-        robot.camera.close();
+        robot.camera1.close();
 
     }   // end method runOpMode()
 

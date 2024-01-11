@@ -53,7 +53,7 @@ public class VisionSubsystem{
 
     public int elementDetection(Telemetry telemetry) {
         zone = detectionPipeline.get_element_zone();
-        telemetry.addData("Element Zone", zone);
+        telemetry.addData("Element Zone:", zone);
         return zone;
     }
 

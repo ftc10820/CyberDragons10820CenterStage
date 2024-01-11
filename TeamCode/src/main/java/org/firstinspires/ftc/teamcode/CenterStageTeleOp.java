@@ -2,11 +2,14 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.TouchSensor;
+
+import org.firstinspires.ftc.vision.VisionPortal;
 
 @TeleOp
 public class CenterStageTeleOp extends LinearOpMode {
@@ -17,13 +20,18 @@ public class CenterStageTeleOp extends LinearOpMode {
     public DcMotorEx backRight;
 
     public TouchSensor touchSensor;
+    private ColorSensor pixelDetectorRight;
+    private ColorSensor pixelDetectorLeft;
     public DcMotorEx crane;
     public Servo indexer;
     public Servo intakeLeft;
     public Servo intakeRight;
     public Servo craneAngle;
     public Servo ramp;
-    double speedVal = 1.0;
+    public Servo droneLauncher;
+    double speedVal = 0.75;
+    PixelVisionSubsystem pixelVision;
+    int zone = 1;
 
     boolean isTouched = false;
 
@@ -31,6 +39,18 @@ public class CenterStageTeleOp extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
 
         initialize();
+        pixelVision = new PixelVisionSubsystem(hardwareMap);
+        pixelVision.setAlliance("blue");
+
+
+        while (!isStarted()) {
+            zone = pixelVision.elementDetection(telemetry);
+            pixelVision.returnDistance(telemetry);
+
+            telemetry.update();
+        }
+        zone = pixelVision.zone;
+
         waitForStart();
 
         while (opModeIsActive()) {
@@ -53,6 +73,8 @@ public class CenterStageTeleOp extends LinearOpMode {
             frontRight.setPower(frontRightPower * speedVal);
             backRight.setPower(backRightPower * speedVal);
             telemetry.addData("Is Pressed", touchSensor.isPressed());
+            telemetry.addData("Left Pixel Detector", "Red: " + pixelDetectorLeft.red() + ", Blue: " + pixelDetectorLeft.blue() + ", Green:" + pixelDetectorLeft.green() + ", alpha: " + pixelDetectorLeft.alpha());
+            telemetry.addData("Right Pixel Detector", "Red: " + pixelDetectorRight.red() + ", Blue: " + pixelDetectorRight.blue() + ", Green:" + pixelDetectorRight.green() + ", alpha: " + pixelDetectorRight.alpha());
             telemetry.update();
 
             /*
@@ -63,11 +85,12 @@ public class CenterStageTeleOp extends LinearOpMode {
                3. Set crane.setPower to cranePower (don't put this in an if-statement)
              */
             //Sees if the controller is going backwards and if the touch sensor is being touched and the disables it from moving backwards
-            if (touchSensor.isPressed()){
+            if (touchSensor.isPressed() && gamepad2.left_stick_y > 0){
                 isTouched = true;
                 crane.setPower(0);
             } else if (gamepad2.left_stick_y < 0) {
                 isTouched = false;
+                crane.setPower(gamepad2.left_stick_y);
             }
             if(isTouched == false) {
                 crane.setPower(gamepad2.left_stick_y);
@@ -86,7 +109,9 @@ public class CenterStageTeleOp extends LinearOpMode {
                 craneAngle.setPosition(0.5);
 
             }
-
+            if(gamepad2.right_trigger > 0){
+                droneLauncher.setPosition(1);
+            }
             if (gamepad2.dpad_down) {
                 frontLeft.setPower(-.5);
                 backLeft.setPower(-.5);
@@ -140,36 +165,34 @@ public class CenterStageTeleOp extends LinearOpMode {
 
 
 
-            /*
-            if (gamepad1.y) {
+            if (gamepad1.dpad_up) {
 
-                ramp.setPosition(0.35);
+                ramp.setPosition(0.47);
 
-            } else if (gamepad1.a) {
+            } else if (gamepad1.dpad_down) {
 
-                ramp.setPosition(0.45);
+                ramp.setPosition(0.55);
 
             }
 
-             */
 
             if (gamepad1.x) {
 
-                ramp.setPosition(0.45);
+                ramp.setPosition(0.55);
                 indexer.setPosition(0);
                 sleep(500);
 
-                intakeLeft.setPosition(0);
-                intakeRight.setPosition(0.9);
+                intakeLeft.setPosition(0.47);
+                intakeRight.setPosition(0.65);
                 sleep(500);
+                intakeLeft.setPosition(1);
+                intakeRight.setPosition(0.1);
 
                 indexer.setPosition(1);
                 sleep(1000);
 
-                ramp.setPosition(0.3);
+                ramp.setPosition(0.47);
                 indexer.setPosition(0.25);
-                intakeLeft.setPosition(1);
-                intakeRight.setPosition(0.1);
             }
 
 
@@ -212,14 +235,19 @@ public class CenterStageTeleOp extends LinearOpMode {
         craneAngle = hardwareMap.get(Servo.class, "CraneAngle");
         ramp = hardwareMap.get(Servo.class, "Ramp");
 
+        droneLauncher = hardwareMap.get(Servo.class, "DroneLauncher");
 
-        ramp.setPosition(0.3);
+        ramp.setPosition(0.47);
         indexer.setPosition(0.25);
         intakeLeft.setPosition(1);
         intakeRight.setPosition(0.1);
-
+        droneLauncher.setPosition(0);
 
         touchSensor = hardwareMap.get(TouchSensor.class, "Touch");
+
+        pixelDetectorLeft = hardwareMap.get(ColorSensor.class, "PixelDetectorLeft");
+        pixelDetectorRight = hardwareMap.get(ColorSensor.class, "PixelDetectorRight");
+
 
 
 

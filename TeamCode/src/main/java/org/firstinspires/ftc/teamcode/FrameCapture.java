@@ -58,6 +58,7 @@ import java.util.Locale;
  */
 
 @TeleOp
+@Disabled
 public class FrameCapture extends LinearOpMode
 {
     /*
