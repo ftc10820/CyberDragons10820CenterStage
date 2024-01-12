@@ -93,6 +93,13 @@ public class Qualifier1_TeleOp extends LinearOpMode {
 
     int craneMax = 4500;
 
+    double cranePosUp = 0.0 ;
+    double cranePosDown = 1.0 ;
+    double curCranePos = 0.0 ;
+
+    boolean craneUpFlag = false ;
+    boolean craneDownFlag = false ;
+
     public void runOpMode() throws InterruptedException {
 
         initialize(); // this is only for initializing the drives, servos and sensors
@@ -107,10 +114,16 @@ public class Qualifier1_TeleOp extends LinearOpMode {
         // disable tfod at the start
         visionPortal.setProcessorEnabled(tfod, false);
 
+        cranePosUp = craneAngle.getPosition() ;
+        cranePosDown = craneAngle.getPosition() ;
+
+
         while (opModeIsActive()) {
 
             telemetry.addData("encoder value: ", crane.getCurrentPosition());
             telemetry.update();
+
+            curCranePos = craneAngle.getPosition() ;
 
             // enabled tfod dection is left bumper is pressed
             if ((streamingEnabled == false) && (gamepad1.left_bumper)) {
@@ -180,7 +193,51 @@ public class Qualifier1_TeleOp extends LinearOpMode {
             } else if (gamepad2.b)
                 positionCraneHigh();
 
-            extendCrane(-gamepad2.left_stick_y);
+            // take distance sensor and touch sensor into account
+            // logic for manual control of linear slide
+            double cranePower = -gamepad2.left_stick_y;
+            if ((cranePower > 0) && (distanceBucket.getDistance(DistanceUnit.CM) < 15))
+                cranePower *= 0.2;
+            if ((cranePower < 0) && (touchCrane.isPressed()))
+                cranePower *= 0.1;
+            extendCrane(cranePower);
+
+            // logic for manual lifting of crane
+            if (gamepad2.dpad_left) {
+                if (craneUpFlag == false) {
+                    craneDownFlag = false ;
+                    craneUpFlag = true ;
+                    cranePosUp = craneAngle.getPosition() + 0.1 ;
+                    if (cranePosUp > 1.0)
+                        cranePosUp = 1.0;
+                    craneAngle.setPosition(cranePosUp);
+                } else {
+                    if (craneAngle.getPosition() > (cranePosUp - 0.02)) {
+                        cranePosUp += 0.1;
+                        if (cranePosUp > 1.0)
+                            cranePosUp = 1.0;
+                        craneAngle.setPosition(cranePosUp);
+                    }
+                }
+            }
+
+            if (gamepad2.dpad_right) {
+                if (craneDownFlag == false) {
+                    craneUpFlag = false ;
+                    craneDownFlag = true ;
+                    cranePosDown = craneAngle.getPosition() - 0.1 ;
+                    if (cranePosDown < 0.0)
+                        cranePosDown = 0.0;
+                    craneAngle.setPosition(cranePosDown);
+                } else {
+                    if (craneAngle.getPosition() < (cranePosDown + 0.02)) {
+                        cranePosDown -= 0.1;
+                        if (cranePosDown < 0.0)
+                            cranePosDown = 0.0;
+                        craneAngle.setPosition(cranePosDown);
+                    }
+                }
+            }
 
             driveSuspension(-gamepad2.right_stick_y);
 
@@ -196,17 +253,11 @@ public class Qualifier1_TeleOp extends LinearOpMode {
             }
 
             if(gamepad2.dpad_up) { // throws pixel into bucket
-
                 liftIntakePlatform();
-
-
             }
 
             if(gamepad2.dpad_down) {
-
                 initIntakePlatform();
-
-
             }
 
         }
@@ -520,13 +571,10 @@ public class Qualifier1_TeleOp extends LinearOpMode {
 
         }
         stopCrane();
-        sleep(500);
+        //sleep(500);
 
         if (crane.getCurrentPosition() < 4000) {
-
-
             crane.setPower(speed*0.2);
-
             sleep(slow_time);
             stopCrane();
 
@@ -595,7 +643,7 @@ public class Qualifier1_TeleOp extends LinearOpMode {
         droneLauncher.setPosition(0);
     }
     void releaseDrone() {
-        droneLauncher.setPosition(0.7);
+        droneLauncher.setPosition(0.5);
     }
     // using the drone launcher for both drone and suspension hook
     void releaseSuspensionHook() {
