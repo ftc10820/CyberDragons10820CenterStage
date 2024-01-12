@@ -5,6 +5,10 @@ import android.util.Size;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
+import com.acmerobotics.roadrunner.trajectory.constraints.AngularVelocityConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.MinVelocityConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryVelocityConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.TranslationalVelocityConstraint;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
@@ -19,6 +23,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
+import org.firstinspires.ftc.robotcore.external.navigation.AngularVelocity;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
@@ -28,10 +33,14 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
 import java.util.List;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+
 
 @Autonomous
 public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
+
+    //private org.firstinspires.ftc.vision.apriltag.AprilTagDetection desiredTag = null;
 
     public SampleMecanumDrive drive;
 
@@ -168,7 +177,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 .build();
 
         Trajectory backstage_3 = drive.trajectoryBuilder(backstage_2.end().plus(new Pose2d(0,0, Math.toRadians(180))))
-                .lineTo(new Vector2d(42, 36))
+                .lineTo(new Vector2d(42, 40))
                 .build();
 
         Trajectory adjustment = drive.trajectoryBuilder(backstage_3.end())
@@ -183,7 +192,15 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 .strafeLeft(6.0)
                 .build();
 
+        TrajectoryVelocityConstraint slowSpeed = new MinVelocityConstraint(Arrays.asList(new TranslationalVelocityConstraint(60), new AngularVelocityConstraint(1)));
 
+        Trajectory strafeLeft = drive.trajectoryBuilder(adjustment.end())
+                .strafeLeft(1)
+                .build();
+
+        Trajectory strafeRight = drive.trajectoryBuilder(adjustment.end())
+                .strafeRight(1)
+                .build();
 
         while (!isStarted()) {
             vision.elementDetection(telemetry);
@@ -210,8 +227,8 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 drive.followTrajectory(zone1_2);
                 drive.followTrajectory(backstage_1);
                 drive.followTrajectory(backstage_2);
-                drive.turn(Math.toRadians(180));
-                drive.followTrajectory(backstage_3);
+                drive.turn(Math.toRadians(200));
+                //drive.followTrajectory(backstage_3);
 
 
 
@@ -223,7 +240,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 drive.followTrajectory(zone2_traj2);
                 drive.turn(Math.toRadians(90));
                 drive.followTrajectory(zone2_traj3);
-                drive.followTrajectory(zone2_traj4);
+                //drive.followTrajectory(zone2_traj4);
 
 
             } else {
@@ -234,29 +251,62 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 drive.followTrajectory(zone3_2);
                 drive.followTrajectory(backstage_1);
                 drive.followTrajectory(backstage_2);
-                drive.turn(Math.toRadians(180));
-                drive.followTrajectory(backstage_3);
+                drive.turn(Math.toRadians(200));
+                //drive.followTrajectory(backstage_3);
 
 
 
 
             }
+
             // april tag logic
-            if (zone == 1) {
-
-                drive.followTrajectory(zone1_backdrop);
-
-
-            } else if (zone == 3) {
-
-                drive.followTrajectory(zone3_backdrop);
-
+            initAprilTag();
+            telemetry.addData("Value: ", distanceBucket.getDistance(DistanceUnit.INCH));
+            telemetry.update();
+            drive.moveForward(100,.5);
+            double oldDistance = distanceBucket.getDistance(DistanceUnit.INCH);
+            while(distanceBucket.getDistance(DistanceUnit.INCH) <= oldDistance*.8 || !rightAprilTag(zone)){
+                drive.moveLeft(50,.5);
+            }
+            while(!strafeToAprilTag(zone)){
 
             }
+            /*drive.moveLeft(.5);
+            while(getDistanceToAprilTag(zone) == 0){
+
+            }
+            drive.stopAllWheels();
+            oldDistance = distanceBucket.getDistance(DistanceUnit.INCH);
+            do{
+                telemetry.addData("Value: ", getDistanceToAprilTag(zone));
+                telemetry.update();
+                if(getDistanceToAprilTag(zone) != 0) {
+                    if (getDistanceToAprilTag(zone) > 4) {
+                        drive.stopAllWheels();
+                        telemetry.addLine("1");
+                        telemetry.update();
+                        drive.moveLeft(.5);
+                    } else if (getDistanceToAprilTag(zone) < 3) {
+                        drive.stopAllWheels();
+                        telemetry.addLine("2");
+                        telemetry.update();
+                        drive.moveRight(.5);
+                    } else if (getDistanceToAprilTag(zone) == 0) {
+
+                    }
+                    else {
+                        telemetry.addLine("3");
+                        telemetry.update();
+                        break;
+                    }
+                }
+            }while (getDistanceToAprilTag(zone) > 4 || getDistanceToAprilTag(zone) < 3 || getDistanceToAprilTag(zone) == 0 || distanceBucket.getDistance(DistanceUnit.INCH) > oldDistance*1.2);
+            */
 
 
 
             // testing placing a pixel at high level
+            /*
             positionCraneLow();
             extendCraneUseSensor(0.8,10000, 12.5, 1500);
             sleep(250);
@@ -264,6 +314,8 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
             sleep(250);
             retractCraneHome(0.8, 2500);
             sleep(250);
+            */
+
 
             /*
             positionCraneBase();
@@ -599,8 +651,105 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
         sleep(2000) ;
 
     }
+    private double getDistanceToAprilTag(int zone){
+        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+        for (AprilTagDetection detection : currentDetections) {
+            telemetry.addData("April Tag " + detection.id + " ", detection.ftcPose.x);
+            telemetry.addData("April Tag " + detection.id + " ", detection.ftcPose.y);
+            if(detection.id == zone){
+                    return detection.ftcPose.x;
+                }
+            }
+        telemetry.update();
+        return 0.0;
+    }
+    boolean strafeToAprilTag(int tagNumber) throws InterruptedException {
 
 
+        //tag center - x = 3, y = 16.5
+        double tagXPos = 3;
+        double tagYPos = 16.5;
+
+        boolean targetFound = false;
+        boolean xAligned = false;
+        desiredTag = null;
+
+        List<org.firstinspires.ftc.vision.apriltag.AprilTagDetection> currentDetections = aprilTag.getDetections();
+        for (org.firstinspires.ftc.vision.apriltag.AprilTagDetection detection : currentDetections) {
+            if ((detection.metadata != null) &&
+                    (detection.id == tagNumber)) {
+                targetFound = true;
+                desiredTag = detection;
+                break;  // don't look any further.
+            } else {
+                telemetry.addData("Unknown Target", "Tag ID %d is not in TagLibrary\n", detection.id);
+            }
+        }
+
+        if (targetFound) {
+            telemetry.addData("Target", "ID %d (%s)", desiredTag.id, desiredTag.metadata.name);
+            telemetry.addData("X Value: ", desiredTag.ftcPose.x);
+            telemetry.addData("Y Value: ", desiredTag.ftcPose.y);
 
 
+        } else {
+            telemetry.addData("Target", "not found");
+        }
+
+        telemetry.update();
+
+
+        if (desiredTag != null) {
+
+            double xPos = desiredTag.ftcPose.x;
+            double yPos = desiredTag.ftcPose.y;
+            double threshold = 0.5;
+
+            if (Math.abs(xPos - tagXPos) > threshold) {
+
+                if (xPos > tagXPos) {
+
+                    drive.moveLeft(25, 0.5);
+
+
+                } else if (xPos < tagXPos) {
+
+                    drive.moveRight(25, 0.5);
+
+                }
+            }else{
+                xAligned = true;
+            }
+
+
+            if (Math.abs(yPos - tagYPos) > threshold) {
+
+                if (yPos > tagYPos) {
+
+                    drive.moveBackwards(25, 0.1);
+
+
+                } else if (yPos < tagYPos) {
+
+                    drive.moveForward(25, 0.1);
+
+                }
+            }else{
+                if(xAligned){
+                    return true;
+                }
+            }
+
+        }
+        return false;
+    }
+    private boolean rightAprilTag(int zone){
+        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+        for (AprilTagDetection detection : currentDetections) {
+            if(detection.id == zone){
+                return true;
+            }
+        }
+        return false;
+    }
 }

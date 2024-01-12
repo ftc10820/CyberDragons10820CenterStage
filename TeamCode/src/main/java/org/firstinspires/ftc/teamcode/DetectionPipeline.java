@@ -100,6 +100,7 @@ public class DetectionPipeline extends OpenCvPipeline {
 
         // Allowing for the showing of the averages on the stream
         if (toggleShow == 1){
+            original.release();
             return input;
         }else{
             return original;

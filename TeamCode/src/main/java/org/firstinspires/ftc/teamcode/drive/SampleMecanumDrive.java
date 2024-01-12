@@ -315,4 +315,52 @@ public class SampleMecanumDrive extends MecanumDrive {
     public static TrajectoryAccelerationConstraint getAccelerationConstraint(double maxAccel) {
         return new ProfileAccelerationConstraint(maxAccel);
     }
+    public void moveRight(int time, double speed) throws InterruptedException {
+        leftFront.setPower(-speed);
+        rightFront.setPower(speed);
+        leftRear.setPower(speed);
+        rightRear.setPower(-speed);
+
+        Thread.sleep(time);
+
+        stopAllWheels();
+    }
+    public void moveLeft(int time, double speed) throws InterruptedException {
+        leftFront.setPower(speed);
+        rightFront.setPower(-speed);
+        leftRear.setPower(-speed);
+        rightRear.setPower(speed);
+
+        Thread.sleep(time);
+
+        stopAllWheels();
+    }
+    public void moveForward(int time, double speed) throws InterruptedException {
+        leftFront.setPower(speed);
+        rightFront.setPower(speed);
+        leftRear.setPower(speed);
+        rightRear.setPower(speed);
+
+        Thread.sleep(time);
+
+        stopAllWheels();
+    }
+    public void moveBackwards(int time, double speed) throws InterruptedException {
+        leftFront.setPower(-speed);
+        rightFront.setPower(-speed);
+        leftRear.setPower(-speed);
+        rightRear.setPower(-speed);
+
+        Thread.sleep(time);
+
+        stopAllWheels();
+    }
+
+    public void stopAllWheels() throws InterruptedException {
+        leftFront.setPower(0);
+        rightFront.setPower(0);
+        leftRear.setPower(0);
+        rightRear.setPower(0);
+    }
+
 }
