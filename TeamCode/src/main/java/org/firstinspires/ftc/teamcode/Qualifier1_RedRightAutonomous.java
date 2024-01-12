@@ -14,7 +14,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
@@ -23,7 +22,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
-import org.firstinspires.ftc.robotcore.external.navigation.AngularVelocity;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
@@ -32,13 +30,13 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
-import java.util.List;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
 @Autonomous
-public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
+public class Qualifier1_RedRightAutonomous extends LinearOpMode {
 
     //private org.firstinspires.ftc.vision.apriltag.AprilTagDetection desiredTag = null;
 
@@ -228,7 +226,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 drive.followTrajectory(backstage_1);
                 drive.followTrajectory(backstage_2);
                 drive.turn(Math.toRadians(200));
-                drive.followTrajectory(backstage_3);
+                //drive.followTrajectory(backstage_3);
 
 
 
@@ -240,7 +238,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 drive.followTrajectory(zone2_traj2);
                 drive.turn(Math.toRadians(90));
                 drive.followTrajectory(zone2_traj3);
-                drive.followTrajectory(zone2_traj4);
+                //drive.followTrajectory(zone2_traj4);
 
 
             } else {
@@ -252,7 +250,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 drive.followTrajectory(backstage_1);
                 drive.followTrajectory(backstage_2);
                 drive.turn(Math.toRadians(200));
-                drive.followTrajectory(backstage_3);
+                //drive.followTrajectory(backstage_3);
 
 
 
@@ -261,10 +259,15 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
 
             // april tag logic
             initAprilTag();
+            telemetry.addData("Value: ", distanceBucket.getDistance(DistanceUnit.INCH));
+            telemetry.update();
             drive.moveForward(100,.5);
             double oldDistance = distanceBucket.getDistance(DistanceUnit.INCH);
-            while(distanceBucket.getDistance(DistanceUnit.INCH) <= oldDistance*.8) {
-                drive.moveLeft(50, .5);
+            while(distanceBucket.getDistance(DistanceUnit.INCH) <= oldDistance*.8 || !rightAprilTag(zone)){
+                drive.moveLeft(50,.5);
+            }
+            while(!strafeToAprilTag(zone)){
+
             }
             /*drive.moveLeft(.5);
             while(getDistanceToAprilTag(zone) == 0){
@@ -653,8 +656,8 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
             telemetry.addData("April Tag " + detection.id + " ", detection.ftcPose.y);
             if(detection.id == zone){
                     return detection.ftcPose.x;
+                }
             }
-        }
         telemetry.update();
         return 0.0;
     }
@@ -669,8 +672,8 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
         boolean xAligned = false;
         desiredTag = null;
 
-        List<org.firstinspires.ftc.vision.apriltag.AprilTagDetection> currentDetections = aprilTag.getDetections();
-        for (org.firstinspires.ftc.vision.apriltag.AprilTagDetection detection : currentDetections) {
+        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+        for (AprilTagDetection detection : currentDetections) {
             if ((detection.metadata != null) &&
                     (detection.id == tagNumber)) {
                 targetFound = true;
