@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 
 
 @Autonomous
+@Disabled
 public class InitRobotTest extends LinearOpMode {
 
     // drive train motors
