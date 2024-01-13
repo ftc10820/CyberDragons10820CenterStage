@@ -12,6 +12,7 @@ import java.util.List;
 public class AprilTagSeeker {
 
     public AprilTagSeeker(Telemetry telemetry) {
+        //TODO: init the april tags
         this.telemetry = telemetry;
     }
     private AprilTagProcessor aprilTag;
@@ -23,7 +24,6 @@ public class AprilTagSeeker {
         return moveUntilTag(drive, zone, false);
     }
     public boolean moveUntilTag(SampleMecanumDrive drive, int zone, boolean isBoardRight) throws InterruptedException {
-        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
 
         //tag center - x = 3, y = 16.5
         double tagXPos = 3;
@@ -33,16 +33,19 @@ public class AprilTagSeeker {
         boolean xAligned = false;
         desiredTag = null;
 
-        if(currentDetections == null  || currentDetections.isEmpty()){
-            strafeToTag(drive, isBoardRight, zone);
+        //if(currentDetections == null  || currentDetections.isEmpty()){
+       if( !strafeToTag(drive, isBoardRight, zone)){
+           return false;
         }
+
+        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
 
         for (AprilTagDetection detection : currentDetections) {
             if ((detection.metadata != null) &&
                     (detection.id == zone)) {
                 targetFound = true;
                 desiredTag = detection;
-                break;  // don't look any further.
+                break;
             } else {
                 telemetry.addData("Unknown Target", "Tag ID %d is not in TagLibrary\n", detection.id);
             }
@@ -52,13 +55,14 @@ public class AprilTagSeeker {
             telemetry.addData("Target", "ID %d (%s)", desiredTag.id, desiredTag.metadata.name);
             telemetry.addData("X Value: ", desiredTag.ftcPose.x);
             telemetry.addData("Y Value: ", desiredTag.ftcPose.y);
-
+            telemetry.update();
 
         } else {
-           strafeToTag(drive, isBoardRight, zone);
+          telemetry.addLine("Tag no longer found");
+          telemetry.update();
+          return false;
         }
 
-        telemetry.update();
 
 
         if (desiredTag != null) {
@@ -107,6 +111,7 @@ public class AprilTagSeeker {
     }
 
     public boolean strafeToTag(SampleMecanumDrive drive, boolean boardIsRight, int zone) throws InterruptedException{
+        //TODO: we need an exit strategy for when to stop if no tag is found, maybe overall time
         List<AprilTagDetection> currentDetections = aprilTag.getDetections();
 
         if(boardIsRight){
@@ -127,16 +132,17 @@ public class AprilTagSeeker {
                 telemetry.update();
                 currentDetections = aprilTag.getDetections();
             }
+            return true;
 
-        }else{
-            while(currentDetections == null || currentDetections.isEmpty()) {
+        }else {
+            while (currentDetections == null || currentDetections.isEmpty()) {
                 drive.moveLeft(10, 0.5);
                 currentDetections = aprilTag.getDetections();
                 telemetry.addLine(" moved left ");
                 telemetry.update();
             }
             //check if you have found th correct April Tag
-            while(! foundTag(currentDetections, zone)) {
+            while (!foundTag(currentDetections, zone)) {
 
                 drive.moveLeft(50, 0.25);
                 currentDetections = aprilTag.getDetections();
@@ -144,13 +150,12 @@ public class AprilTagSeeker {
                 telemetry.update();
                 currentDetections = aprilTag.getDetections();
             }
+            return true;
         }
-        return false;
     }
 
 
     private boolean foundTag(List <AprilTagDetection> detections, int zone){
-        //TODO: we need an exit strategy for when to stop if no tag is found, maybe overall time
         if(detections != null && detections.isEmpty()){
             for (AprilTagDetection detection : detections) {
                 if (detection.id == zone) {
