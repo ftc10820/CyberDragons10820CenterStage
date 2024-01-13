@@ -115,7 +115,7 @@ public class Qualifier1_RedLeftAutonomous extends LinearOpMode {
 
         initialize();
         initIntakePlatform();
-        closeRightIntake();
+        closeLeftIntake();
 
         vision = new VisionSubsystem(hardwareMap);
         vision.setAlliance("red");
@@ -221,7 +221,7 @@ public class Qualifier1_RedLeftAutonomous extends LinearOpMode {
 
                 drive.followTrajectory(traj1);
                 drive.followTrajectory(zone1_1);
-                openRightIntake();
+                openLeftIntake();
                 drive.followTrajectory(zone1_2);
                 drive.followTrajectory(backstage_1);
                 drive.followTrajectory(backstage_2);
@@ -234,7 +234,7 @@ public class Qualifier1_RedLeftAutonomous extends LinearOpMode {
             } else if (zone == 2) {
 
                 drive.followTrajectory(zone2_traj1);
-                openRightIntake();
+                openLeftIntake();
                 drive.followTrajectory(zone2_traj2);
                 drive.turn(Math.toRadians(-90));
                 drive.followTrajectory(zone2_traj3);
@@ -245,7 +245,7 @@ public class Qualifier1_RedLeftAutonomous extends LinearOpMode {
 
                 drive.followTrajectory(traj1);
                 drive.followTrajectory(zone3_1);
-                openRightIntake();
+                openLeftIntake();
                 drive.followTrajectory(zone3_2);
                 drive.followTrajectory(backstage_1);
                 drive.followTrajectory(backstage_2);
@@ -259,6 +259,7 @@ public class Qualifier1_RedLeftAutonomous extends LinearOpMode {
 
             // april tag logic
             // initAprilTag();
+            /*
             telemetry.addData("Value: ", distanceBucket.getDistance(DistanceUnit.INCH));
             telemetry.update();
 
@@ -268,6 +269,8 @@ public class Qualifier1_RedLeftAutonomous extends LinearOpMode {
             while(distanceBucket.getDistance(DistanceUnit.INCH) <= oldDistance*.8 || !rightAprilTag(zone)){
                 drive.moveLeft(50,.5);
             }
+
+             */
 
             /*drive.moveLeft(.5);
             while(getDistanceToAprilTag(zone) == 0){
