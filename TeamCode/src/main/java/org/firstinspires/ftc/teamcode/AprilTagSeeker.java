@@ -22,10 +22,6 @@ public class AprilTagSeeker {
     public boolean moveUntilTag(SampleMecanumDrive drive, int zone ) throws InterruptedException{
         return moveUntilTag(drive, zone, false);
     }
-<<<<<<< Updated upstream
-    public static boolean moveUntilTag(SampleMecanumDrive drive, int zone, boolean right){
-       /*List<org.firstinspires.ftc.vision.apriltag.AprilTagDetection> currentDetections = aprilTag.getDetections();
-=======
     public boolean moveUntilTag(SampleMecanumDrive drive, int zone, boolean isBoardRight) throws InterruptedException {
         List<AprilTagDetection> currentDetections = aprilTag.getDetections();
 
@@ -41,7 +37,6 @@ public class AprilTagSeeker {
             strafeToTag(drive, isBoardRight, zone);
         }
 
->>>>>>> Stashed changes
         for (AprilTagDetection detection : currentDetections) {
             if ((detection.metadata != null) &&
                     (detection.id == zone)) {
@@ -149,7 +144,7 @@ public class AprilTagSeeker {
                 telemetry.update();
                 currentDetections = aprilTag.getDetections();
             }
-        }*/
+        }
         return false;
     }
 
