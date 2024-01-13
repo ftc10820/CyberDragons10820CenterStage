@@ -131,11 +131,11 @@ public class Qualifier1_RedLeftAutonomous extends LinearOpMode {
                 .build();
 
         Trajectory zone3_1 = drive.trajectoryBuilder(traj1.end())
-                .forward(8.0)
+                .forward(10.0)
                 .build();
 
         Trajectory zone3_2 = drive.trajectoryBuilder(zone3_1.end())
-                .lineTo(new Vector2d(-60,-32))
+                .lineTo(new Vector2d(-58,-32))
                 .build();
 
         Trajectory zone1_1 = drive.trajectoryBuilder(traj1.end())
@@ -143,7 +143,7 @@ public class Qualifier1_RedLeftAutonomous extends LinearOpMode {
                 .build();
 
         Trajectory zone1_2 = drive.trajectoryBuilder(zone1_1.end())
-                .lineTo(new Vector2d(-60,-32))
+                .lineTo(new Vector2d(-58,-32))
                 .build();
 
         Trajectory backstage_1 = drive.trajectoryBuilder(zone3_2.end())
@@ -151,7 +151,7 @@ public class Qualifier1_RedLeftAutonomous extends LinearOpMode {
                 .build();
 
         Trajectory backstage_2 = drive.trajectoryBuilder(backstage_1.end())
-                .lineTo(new Vector2d(42, -10))
+                .lineTo(new Vector2d(48, -10))
                 .build();
 
         Trajectory zone2_traj1 = drive.trajectoryBuilder(startPose)
@@ -162,20 +162,24 @@ public class Qualifier1_RedLeftAutonomous extends LinearOpMode {
                 .back(12.0)
                 .build();
 
-        Trajectory zone2_traj3 = drive.trajectoryBuilder(zone2_traj2.end().plus(new Pose2d(0,0, Math.toRadians(90))))
-                .lineTo(new Vector2d(42, -10))
+        Trajectory zone2_traj3 = drive.trajectoryBuilder(zone2_traj2.end().plus(new Pose2d(0,0, Math.toRadians(-90))))
+                .lineToLinearHeading(new Pose2d(48, -10, Math.toRadians(180)))
                 .build();
 
         Trajectory zone2_traj4 = drive.trajectoryBuilder(zone2_traj3.end())
-                .strafeRight(24.0)
+                .strafeLeft(6.0)
                 .build();
 
         Trajectory zone2_traj5 = drive.trajectoryBuilder(zone2_traj4.end())
                 .forward(6.0)
                 .build();
 
-        Trajectory backstage_3 = drive.trajectoryBuilder(backstage_2.end().plus(new Pose2d(0,0, Math.toRadians(180))))
-                .lineTo(new Vector2d(42, 40))
+        Trajectory backstage_3 = drive.trajectoryBuilder(backstage_2.end().plus(new Pose2d(0,0, Math.toRadians(200))))
+                .strafeLeft(6.0)
+                .build();
+
+        Trajectory backstage_4 = drive.trajectoryBuilder(backstage_3.end())
+                .strafeLeft(6.0)
                 .build();
 
         Trajectory adjustment = drive.trajectoryBuilder(backstage_3.end())
@@ -193,11 +197,11 @@ public class Qualifier1_RedLeftAutonomous extends LinearOpMode {
         TrajectoryVelocityConstraint slowSpeed = new MinVelocityConstraint(Arrays.asList(new TranslationalVelocityConstraint(60), new AngularVelocityConstraint(1)));
 
         Trajectory strafeLeft = drive.trajectoryBuilder(adjustment.end())
-                .strafeLeft(1)
+                .strafeLeft(6)
                 .build();
 
         Trajectory strafeRight = drive.trajectoryBuilder(adjustment.end())
-                .strafeRight(1)
+                .strafeRight(6)
                 .build();
 
         while (!isStarted()) {
@@ -225,8 +229,8 @@ public class Qualifier1_RedLeftAutonomous extends LinearOpMode {
                 drive.followTrajectory(zone1_2);
                 drive.followTrajectory(backstage_1);
                 drive.followTrajectory(backstage_2);
-                drive.turn(Math.toRadians(160));
-                //drive.followTrajectory(backstage_3);
+                drive.turn(Math.toRadians(200));
+                drive.followTrajectory(backstage_3);
 
 
 
@@ -238,7 +242,7 @@ public class Qualifier1_RedLeftAutonomous extends LinearOpMode {
                 drive.followTrajectory(zone2_traj2);
                 drive.turn(Math.toRadians(-90));
                 drive.followTrajectory(zone2_traj3);
-                //drive.followTrajectory(zone2_traj4);
+                drive.followTrajectory(zone2_traj4);
 
 
             } else {
@@ -249,14 +253,14 @@ public class Qualifier1_RedLeftAutonomous extends LinearOpMode {
                 drive.followTrajectory(zone3_2);
                 drive.followTrajectory(backstage_1);
                 drive.followTrajectory(backstage_2);
-                drive.turn(Math.toRadians(160));
-                //drive.followTrajectory(backstage_3);
+                drive.turn(Math.toRadians(180));
+                drive.followTrajectory(backstage_3);
+                //drive.followTrajectory(backstage_4);
 
 
 
 
             }
-
             // april tag logic
             // initAprilTag();
             /*

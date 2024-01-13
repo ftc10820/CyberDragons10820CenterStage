@@ -12,12 +12,12 @@ public class AprilTagSeeker {
         return moveUntilTag(drive, zone, false);
     }
     public static boolean moveUntilTag(SampleMecanumDrive drive, int zone, boolean right){
-        List<org.firstinspires.ftc.vision.apriltag.AprilTagDetection> currentDetections = aprilTag.getDetections();
+       /*List<org.firstinspires.ftc.vision.apriltag.AprilTagDetection> currentDetections = aprilTag.getDetections();
         for (AprilTagDetection detection : currentDetections) {
             if(detection.id == zone){
                 return true;
             }
-        }
+        }*/
         return false;
     }
     public static void alignWithTag(){

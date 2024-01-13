@@ -118,32 +118,32 @@ public class Qualifier1_RedRightAutonomous extends LinearOpMode {
         closeRightIntake();
 
         vision = new VisionSubsystem(hardwareMap);
-        vision.setAlliance("blue");
+        vision.setAlliance("red");
 
         drive = new SampleMecanumDrive(hardwareMap);
 
         //Starting the robot at the bottom left (blue auto)
-        Pose2d startPose = new Pose2d(-36, 60, Math.toRadians(90));
+        Pose2d startPose = new Pose2d(12, -60, Math.toRadians(270));
         drive.setPoseEstimate(startPose);
 
         Trajectory traj1 = drive.trajectoryBuilder(startPose)
-                .lineToLinearHeading(new Pose2d(-40,32, Math.toRadians(0)))
+                .lineToLinearHeading(new Pose2d(29,-30, Math.toRadians(180)))
                 .build();
 
         Trajectory zone1_1 = drive.trajectoryBuilder(traj1.end())
-                .forward(8.0)
+                .forward(22.0)
                 .build();
 
         Trajectory zone1_2 = drive.trajectoryBuilder(zone1_1.end())
-                .lineTo(new Vector2d(-60,32))
+                .back(40)
                 .build();
 
         Trajectory zone3_1 = drive.trajectoryBuilder(traj1.end())
-                .back(13.0)
+                .back(18.0)
                 .build();
 
         Trajectory zone3_2 = drive.trajectoryBuilder(zone3_1.end())
-                .lineTo(new Vector2d(-60,32))
+                .forward(40)
                 .build();
 
         Trajectory backstage_1 = drive.trajectoryBuilder(zone3_2.end())
@@ -162,8 +162,8 @@ public class Qualifier1_RedRightAutonomous extends LinearOpMode {
                 .back(12.0)
                 .build();
 
-        Trajectory zone2_traj3 = drive.trajectoryBuilder(zone2_traj2.end().plus(new Pose2d(0,0, Math.toRadians(90))))
-                .lineTo(new Vector2d(42, 10))
+        Trajectory zone2_traj3 = drive.trajectoryBuilder(zone2_traj2.end().plus(new Pose2d(0,0, Math.toRadians(-90))))
+                .back(36.0)
                 .build();
 
         Trajectory zone2_traj4 = drive.trajectoryBuilder(zone2_traj3.end())
@@ -222,10 +222,13 @@ public class Qualifier1_RedRightAutonomous extends LinearOpMode {
                 drive.followTrajectory(traj1);
                 drive.followTrajectory(zone1_1);
                 openRightIntake();
+
                 drive.followTrajectory(zone1_2);
+
+                /*
                 drive.followTrajectory(backstage_1);
                 drive.followTrajectory(backstage_2);
-                drive.turn(Math.toRadians(200));
+                drive.turn(Math.toRadians(200));*/
                 //drive.followTrajectory(backstage_3);
 
 
@@ -236,27 +239,31 @@ public class Qualifier1_RedRightAutonomous extends LinearOpMode {
                 drive.followTrajectory(zone2_traj1);
                 openRightIntake();
                 drive.followTrajectory(zone2_traj2);
-                drive.turn(Math.toRadians(90));
+                drive.turn(Math.toRadians(-90));
                 drive.followTrajectory(zone2_traj3);
+
                 //drive.followTrajectory(zone2_traj4);
 
 
             } else {
 
                 drive.followTrajectory(traj1);
-                drive.followTrajectory(zone3_1);
                 openRightIntake();
-                drive.followTrajectory(zone3_2);
-                drive.followTrajectory(backstage_1);
+
+                drive.followTrajectory(zone3_1);
+
+                //drive.followTrajectory(zone3_2);
+
+                /*drive.followTrajectory(backstage_1);
                 drive.followTrajectory(backstage_2);
-                drive.turn(Math.toRadians(200));
+                drive.turn(Math.toRadians(200));*/
                 //drive.followTrajectory(backstage_3);
 
 
 
 
             }
-
+            /*
             // april tag logic
             initAprilTag();
             telemetry.addData("Value: ", distanceBucket.getDistance(DistanceUnit.INCH));
@@ -269,6 +276,8 @@ public class Qualifier1_RedRightAutonomous extends LinearOpMode {
             while(!strafeToAprilTag(zone)){
 
             }
+
+             */
             /*drive.moveLeft(.5);
             while(getDistanceToAprilTag(zone) == 0){
 
@@ -655,9 +664,9 @@ public class Qualifier1_RedRightAutonomous extends LinearOpMode {
             telemetry.addData("April Tag " + detection.id + " ", detection.ftcPose.x);
             telemetry.addData("April Tag " + detection.id + " ", detection.ftcPose.y);
             if(detection.id == zone){
-                    return detection.ftcPose.x;
-                }
+                return detection.ftcPose.x;
             }
+        }
         telemetry.update();
         return 0.0;
     }

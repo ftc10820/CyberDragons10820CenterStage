@@ -133,11 +133,11 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 .build();
 
         Trajectory zone1_1 = drive.trajectoryBuilder(traj1.end())
-                .forward(8.0)
+                .forward(10.0)
                 .build();
 
         Trajectory zone1_2 = drive.trajectoryBuilder(zone1_1.end())
-                .lineTo(new Vector2d(-60,32))
+                .lineTo(new Vector2d(-58,32))
                 .build();
 
         Trajectory zone3_1 = drive.trajectoryBuilder(traj1.end())
@@ -145,7 +145,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 .build();
 
         Trajectory zone3_2 = drive.trajectoryBuilder(zone3_1.end())
-                .lineTo(new Vector2d(-60,32))
+                .lineTo(new Vector2d(-58,32))
                 .build();
 
         Trajectory backstage_1 = drive.trajectoryBuilder(zone3_2.end())
@@ -153,7 +153,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 .build();
 
         Trajectory backstage_2 = drive.trajectoryBuilder(backstage_1.end())
-                .lineTo(new Vector2d(42, 10))
+                .lineTo(new Vector2d(46, 10))
                 .build();
 
         Trajectory zone2_traj1 = drive.trajectoryBuilder(startPose)
@@ -165,7 +165,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 .build();
 
         Trajectory zone2_traj3 = drive.trajectoryBuilder(zone2_traj2.end().plus(new Pose2d(0,0, Math.toRadians(90))))
-                .lineTo(new Vector2d(42, 10))
+                .lineTo(new Vector2d(46, 10))
                 .build();
 
         Trajectory zone2_traj4 = drive.trajectoryBuilder(zone2_traj3.end())
@@ -228,7 +228,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 drive.followTrajectory(backstage_1);
                 drive.followTrajectory(backstage_2);
                 drive.turn(Math.toRadians(200));
-                drive.followTrajectory(backstage_3);
+                //drive.followTrajectory(backstage_3);
 
 
 
@@ -240,7 +240,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 drive.followTrajectory(zone2_traj2);
                 drive.turn(Math.toRadians(90));
                 drive.followTrajectory(zone2_traj3);
-                drive.followTrajectory(zone2_traj4);
+                //drive.followTrajectory(zone2_traj4);
 
 
             } else {
@@ -252,7 +252,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 drive.followTrajectory(backstage_1);
                 drive.followTrajectory(backstage_2);
                 drive.turn(Math.toRadians(200));
-                drive.followTrajectory(backstage_3);
+                //drive.followTrajectory(backstage_3);
 
 
 
@@ -260,12 +260,13 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
             }
 
             // april tag logic
-            initAprilTag();
-            drive.moveForward(100,.5);
+            //initAprilTag();
             double oldDistance = distanceBucket.getDistance(DistanceUnit.INCH);
-            while(distanceBucket.getDistance(DistanceUnit.INCH) <= oldDistance*.8) {
+            /*while(distanceBucket.getDistance(DistanceUnit.INCH) >= oldDistance*.8) {
                 drive.moveLeft(50, .5);
-            }
+                telemetry.addData("distance", distanceBucket.getDistance(DistanceUnit.INCH));
+                telemetry.update();
+            }*/
             /*drive.moveLeft(.5);
             while(getDistanceToAprilTag(zone) == 0){
 
