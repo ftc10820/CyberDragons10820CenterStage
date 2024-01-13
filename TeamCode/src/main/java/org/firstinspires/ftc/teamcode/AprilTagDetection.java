@@ -4,6 +4,7 @@ package org.firstinspires.ftc.teamcode;
 import android.util.Size;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -27,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 
 @Autonomous
+@Disabled
 public class AprilTagDetection extends LinearOpMode {
 
     // drive train motors
