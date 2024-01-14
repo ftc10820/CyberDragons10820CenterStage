@@ -135,7 +135,7 @@ public class Qualifier1_RedLeftAutonomous extends LinearOpMode {
                 .build();
 
         Trajectory zone3_2 = drive.trajectoryBuilder(zone3_1.end())
-                .lineTo(new Vector2d(-58,-32))
+                .lineTo(new Vector2d(-57,-32))
                 .build();
 
         Trajectory zone1_1 = drive.trajectoryBuilder(traj1.end())
@@ -143,7 +143,7 @@ public class Qualifier1_RedLeftAutonomous extends LinearOpMode {
                 .build();
 
         Trajectory zone1_2 = drive.trajectoryBuilder(zone1_1.end())
-                .lineTo(new Vector2d(-58,-32))
+                .lineTo(new Vector2d(-57,-32))
                 .build();
 
         Trajectory backstage_1 = drive.trajectoryBuilder(zone3_2.end())
@@ -757,4 +757,5 @@ public class Qualifier1_RedLeftAutonomous extends LinearOpMode {
         }
         return false;
     }
+
 }

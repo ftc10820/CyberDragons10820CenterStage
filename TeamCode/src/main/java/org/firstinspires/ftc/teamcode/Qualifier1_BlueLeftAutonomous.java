@@ -109,6 +109,8 @@ public class Qualifier1_BlueLeftAutonomous extends LinearOpMode {
     private static final int DESIRED_TAG_ID = 2;     // Choose the tag you want to approach or set to -1 for ANY tag.
     private AprilTagDetection desiredTag = null;     // Used to hold the data for a detected AprilTag
 
+    int craneMax = 4500;
+
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -223,6 +225,13 @@ public class Qualifier1_BlueLeftAutonomous extends LinearOpMode {
                 openLeftIntake();
                 drive.followTrajectory(zone1_1);
 
+                extendCraneUseSensor(0.8, 5000, 15, 2500) ;
+                liftCraneSlightly(0.2);
+                sleep(50) ;
+                retractCraneHome(0.8, 1000);
+                positionCraneBase();
+                retractCraneHome(0.8, 2000);
+
                 /*drive.followTrajectory(zone1_2);
                 drive.followTrajectory(backstage_1);
                 drive.followTrajectory(backstage_2);
@@ -249,6 +258,13 @@ public class Qualifier1_BlueLeftAutonomous extends LinearOpMode {
                 drive.followTrajectory(zone3_1);
                 openLeftIntake();
                 drive.followTrajectory(zone3_2);
+
+                extendCraneUseSensor(0.8, 5000, 15, 2500) ;
+                liftCraneSlightly(0.2);
+                sleep(50) ;
+                retractCraneHome(0.8, 1000);
+                positionCraneBase();
+                retractCraneHome(0.8, 2000);
 
                 /*drive.followTrajectory(backstage_1);
                 drive.followTrajectory(backstage_2);
@@ -493,13 +509,29 @@ public class Qualifier1_BlueLeftAutonomous extends LinearOpMode {
         // NOTE: timeout depends on the speed
         eTime1.reset();
         crane.setPower(speed);
-        while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (eTime1.milliseconds() < timeout_milli)) {
+        while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (crane.getCurrentPosition() < craneMax)) {
 
         }
         stopCrane();
-        crane.setPower(0.2);
-        sleep(slow_time) ;
-        stopCrane();
+        //sleep(500);
+
+        if (crane.getCurrentPosition() < 4000) {
+            crane.setPower(speed*0.2);
+            sleep(slow_time);
+            stopCrane();
+
+/*
+            crane.setTargetPosition(crane.getCurrentPosition() + (8 * 63)); // calculate 63 encoder ticks per cm
+            crane.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            crane.setPower(speed*0.2);
+
+ */
+
+        }
+
+
+
+
     }
     void retractCrane(double speed) {
         crane.setPower(-1.0*speed);
@@ -755,4 +787,9 @@ public class Qualifier1_BlueLeftAutonomous extends LinearOpMode {
         }
         return false;
     }
+
+    void liftCraneSlightly(double incr) {
+        craneAngle.setPosition(craneAngle.getPosition() + incr);
+    }
+
 }

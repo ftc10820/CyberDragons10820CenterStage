@@ -269,6 +269,11 @@ public class Qualifier1_TeleOp extends LinearOpMode {
         double x = gamepad1.left_stick_x; // strafing left or right
         double rx = gamepad1.right_stick_x; // turn left (anti-clockwise) or right (clockwise)
 
+        // cube inputs to reduce initial acceleration
+        y = Math.pow(y, 3);
+        x = Math.pow(x, 3);
+        rx = Math.pow(rx, 3);
+
         double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
         frontLeftPower = (y + x + rx) / denominator;
         backLeftPower = (y - x + rx) / denominator;
