@@ -611,6 +611,8 @@ public class AprilTagAuto extends LinearOpMode {
         currentBearing = desiredTag.ftcPose.bearing;
         currentRange = desiredTag.ftcPose.range;
 
+        //TODO: i think the strafe correction should be added after the trig calculation
+        //TODO: you may want to add telemetry here too to see what value are going into the calculation and the result
         strafeDistance = currentRange * (Math.sin((currentBearing + strafeCorrection)));
 
         //strafing
