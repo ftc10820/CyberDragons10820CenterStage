@@ -261,17 +261,20 @@ public class Qualifier1_TeleOp extends LinearOpMode {
                 }
             }
 
-            driveSuspension(-gamepad2.right_stick_y);
+            // only for end game
+            if(eTeleOp.milliseconds() > 90000) {
+                driveSuspension(-gamepad2.right_stick_y);
 
-            if (gamepad2.right_trigger > 0) {
-                releaseDrone();
-            }
+                if (gamepad2.right_trigger > 0) {
+                    releaseDrone();
+                }
 
-            if(gamepad2.left_trigger > 0){
-                releaseSuspensionHook();
-                extendCrane(0.8);
-                sleep(100) ;
-                stopCrane();
+                if (gamepad2.left_trigger > 0) {
+                    releaseSuspensionHook();
+                    extendCrane(0.8);
+                    sleep(100);
+                    stopCrane();
+                }
             }
 
             if(gamepad2.dpad_up) { // throws pixel into bucket
