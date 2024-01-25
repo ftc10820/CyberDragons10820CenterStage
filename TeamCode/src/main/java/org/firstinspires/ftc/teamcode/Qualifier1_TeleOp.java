@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
@@ -59,6 +60,10 @@ public class Qualifier1_TeleOp extends LinearOpMode {
     // the drone launcher
     public Servo droneLauncher;
 
+    // DCMotors being used to drive LEDs
+    public DcMotorSimple ledRight ;
+    public DcMotorSimple ledLeft ;
+
     // sensors used for pixel intake
     private ColorSensor pixelDetectorRight;
     private ColorSensor pixelDetectorLeft;
@@ -89,6 +94,8 @@ public class Qualifier1_TeleOp extends LinearOpMode {
     ElapsedTime eTime1 = new ElapsedTime() ;
     ElapsedTime eTime2 = new ElapsedTime() ;
 
+    ElapsedTime eTeleOp = new ElapsedTime() ;
+
     double speedFactor = 1.0 ;
 
     int craneMax = 4500;
@@ -117,11 +124,26 @@ public class Qualifier1_TeleOp extends LinearOpMode {
         cranePosUp = craneAngle.getPosition() ;
         cranePosDown = craneAngle.getPosition() ;
 
+        eTeleOp.reset();
 
         while (opModeIsActive()) {
 
             telemetry.addData("encoder value: ", crane.getCurrentPosition());
             telemetry.update();
+
+            // light up the LEDs
+            if(isPixelDetectedLeft()) {
+                ledLeft.setPower(1.0);
+            } else {
+                ledLeft.setPower(0.0);
+            }
+
+            // light up the LEDs
+            if(isPixelDetectedRight()) {
+                ledRight.setPower(1.0);
+            } else {
+                ledRight.setPower(0.0);
+            }
 
             curCranePos = craneAngle.getPosition() ;
 
@@ -329,6 +351,9 @@ public class Qualifier1_TeleOp extends LinearOpMode {
         ramp = hardwareMap.get(Servo.class, "Ramp");
         droneLauncher = hardwareMap.get(Servo.class, "DroneLauncher");
 
+        // Drivers being used for LEDs
+        ledRight = hardwareMap.get(DcMotorSimple.class, "ledRight");
+        ledLeft = hardwareMap.get(DcMotorSimple.class, "ledLeft");
 
         //sensors
         touchCrane = hardwareMap.get(TouchSensor.class, "Touch");
@@ -521,11 +546,11 @@ public class Qualifier1_TeleOp extends LinearOpMode {
     }
 
     void openRightIntake() {
-        intakeRight.setPosition(0.32);
+        intakeRight.setPosition(0);
     }
 
     void closeRightIntake() {
-        intakeRight.setPosition(0.6);
+        intakeRight.setPosition(1.0);
     }
 
     void lowerRamp() {
@@ -832,7 +857,7 @@ public class Qualifier1_TeleOp extends LinearOpMode {
         sleep(100);
         closeRightIntake();
         closeLeftIntake();
-        sleep(1000);
+            sleep(1500);
         liftRamp();
         initIntakePlatform();
         openRightIntake();

@@ -373,11 +373,11 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
     }
 
     void openRightIntake() {
-        intakeRight.setPosition(0.32);
+        intakeRight.setPosition(0);
     }
 
     void closeRightIntake() {
-        intakeRight.setPosition(0.6);
+        intakeRight.setPosition(1.0);
     }
 
     void initAutonomous() {
