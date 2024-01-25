@@ -1,10 +1,16 @@
 package org.firstinspires.ftc.teamcode;
 
-
 import android.util.Size;
 
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
+import com.acmerobotics.roadrunner.trajectory.Trajectory;
+import com.acmerobotics.roadrunner.trajectory.constraints.AngularVelocityConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.MinVelocityConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryVelocityConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.TranslationalVelocityConstraint;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -19,26 +25,27 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.Exposur
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.vision.VisionPortal;
+import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
+@Config
 @Autonomous
-@Disabled
-public class AprilTagDetection extends LinearOpMode {
+public class AprilTagAuto extends LinearOpMode {
 
-    // drive train motors
-    public DcMotorEx frontLeft;
-    public DcMotorEx frontRight;
-    public DcMotorEx backLeft;
-    public DcMotorEx backRight;
+    //private org.firstinspires.ftc.vision.apriltag.AprilTagDetection desiredTag = null;
+
+    public SampleMecanumDrive drive;
 
     // crane linear slide and lifter
-    public DcMotorEx crane;
+    public DcMotor crane;
     public Servo craneAngle;
 
     // suspension motor
@@ -70,9 +77,30 @@ public class AprilTagDetection extends LinearOpMode {
     public ColorSensor colorFieldLine;
 
     // Vision portal and vision processing pipelines
-    private VisionPortal visionPortal;
     private TfodProcessor tfod;
     private AprilTagProcessor aprilTag;
+
+    private VisionPortal visionPortal;
+
+    //april tag ftc dash variables
+
+     int zone = 1;
+
+     public static int aprilTagZone = 1;
+
+    public static double currentBearing = 10.0;
+    public static double currentRange = 10.0;
+
+    public static double strafeCorrection = 10.0;
+    public static double turnCorrection = 0.0;
+
+    public static double strafeDistance = 5.0;
+    public static double turnDistance = 0;
+
+
+
+    VisionSubsystem vision;
+
 
     // helper variables
     ElapsedTime eTime1 = new ElapsedTime() ;
@@ -96,53 +124,53 @@ public class AprilTagDetection extends LinearOpMode {
 
 
     private static final int DESIRED_TAG_ID = 2;     // Choose the tag you want to approach or set to -1 for ANY tag.
-    private org.firstinspires.ftc.vision.apriltag.AprilTagDetection desiredTag = null;     // Used to hold the data for a detected AprilTag
+    public static AprilTagDetection desiredTag = null;     // Used to hold the data for a detected AprilTag
+
+    public Trajectory strafeLeftAprilTag;
+
+    public Trajectory strafeRightAprilTag;
 
 
     @Override
     public void runOpMode() throws InterruptedException {
 
-        initialize(); // this is only for initializing the drives, servos and sensors
-        initAprilTag();
+        initialize();
+        drive = new SampleMecanumDrive(hardwareMap);
 
-        initAutonomous() ; // initialize servos for autonomous ; raise ramp and open intake
+        Pose2d startPose = new Pose2d(0, 0, Math.toRadians(180));
+        drive.setPoseEstimate(startPose);//april tag paths
+
+
+        initAprilTag();
+        telemetryAprilTag();
+        telemetry.update();
 
         waitForStart();
+        if (opModeIsActive()) {
 
-        while (opModeIsActive()) {
+            if (aprilTagAdjustment() == 1) {
 
-            strafeToAprilTag(3);
+                strafeRightAprilTag = drive.trajectoryBuilder(startPose)
+                        .strafeRight(strafeDistance)
+                        .build();
 
+                drive.followTrajectory(strafeRightAprilTag);
+
+            } else {
+
+                strafeLeftAprilTag = drive.trajectoryBuilder(startPose)
+                        .strafeLeft(strafeDistance)
+                        .build();
+
+                drive.followTrajectory(strafeLeftAprilTag);
+
+            }
 
         }
 
     }
 
-    // TODO: Refactor initialize() to RobotClass. OpMode.initialize() should be robot = new RobotClass(); robot.initialize();
     public void initialize() {
-
-
-        // setting up drive train
-        frontRight = hardwareMap.get(DcMotorEx.class, "FrontRight");
-        frontLeft = hardwareMap.get(DcMotorEx.class, "FrontLeft");
-        backRight = hardwareMap.get(DcMotorEx.class, "BackRight");
-        backLeft = hardwareMap.get(DcMotorEx.class, "BackLeft");
-
-        frontRight.setPower(0);
-        frontLeft.setPower(0);
-        backRight.setPower(0);
-        backLeft.setPower(0);
-
-        // this ensures that all wheels go forward when applying postive power
-        frontRight.setDirection(DcMotorEx.Direction.FORWARD);
-        backRight.setDirection(DcMotorEx.Direction.FORWARD);
-        frontLeft.setDirection(DcMotorEx.Direction.REVERSE);
-        backLeft.setDirection(DcMotorEx.Direction.REVERSE);
-
-        frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         //crane motor
         crane = hardwareMap.get(DcMotorEx.class, "Crane");
@@ -170,7 +198,27 @@ public class AprilTagDetection extends LinearOpMode {
         pixelDetectorLeft = hardwareMap.get(ColorSensor.class, "PixelDetectorLeft");
         pixelDetectorRight = hardwareMap.get(ColorSensor.class, "PixelDetectorRight");
 
-        distanceBucket = hardwareMap.get(DistanceSensor.class, "DistanceBucket") ;
+        distanceBucket = hardwareMap.get(DistanceSensor.class, "DistanceBucket");
+
+
+
+
+    }
+
+    void openLeftIntake() {
+        intakeLeft.setPosition(1.0);
+    }
+
+    void closeLeftIntake() {
+        intakeLeft.setPosition(0.3);
+    }
+
+    void openRightIntake() {
+        intakeRight.setPosition(0.32);
+    }
+
+    void closeRightIntake() {
+        intakeRight.setPosition(0.6);
     }
 
     void initAutonomous() {
@@ -185,19 +233,12 @@ public class AprilTagDetection extends LinearOpMode {
         final String[] LABELS = {
                 "green", "purple", "white", "yellow",
         };
-        /*
-        final String TFOD_MODEL_ASSET = "CenterStage.tflite";
-        final String[] LABELS = {
-                "Pixel",
-        };
-
-         */
 
         // Create the TensorFlow processor by using a builder.
         tfod = new TfodProcessor.Builder()
 
-                 //Use setModelAssetName() if the TF Model is built in as an asset.
-                 //Use setModelFileName() if you have downloaded a custom team model to the Robot Controller.
+                //Use setModelAssetName() if the TF Model is built in as an asset.
+                //Use setModelFileName() if you have downloaded a custom team model to the Robot Controller.
                 .setModelAssetName(TFOD_MODEL_ASSET)
                 //.setModelFileName(TFOD_MODEL_FILE)
 
@@ -217,10 +258,10 @@ public class AprilTagDetection extends LinearOpMode {
         // Choose a camera resolution. Not all cameras support all resolutions.
         builder.setCameraResolution(new Size(640, 480));
 
-         //Enable the RC preview (LiveView).  Set "false" to omit camera monitoring.
+        //Enable the RC preview (LiveView).  Set "false" to omit camera monitoring.
         builder.enableLiveView(true) ;
 
-         //Set the stream format; MJPEG uses less bandwidth than default YUY2.
+        //Set the stream format; MJPEG uses less bandwidth than default YUY2.
         //builder.setStreamFormat(VisionPortal.StreamFormat.YUY2);
 
         // Choose whether or not LiveView stops if no processors are enabled.
@@ -237,133 +278,9 @@ public class AprilTagDetection extends LinearOpMode {
         // Set confidence threshold for TFOD recognitions, at any time.
         tfod.setMinResultConfidence(0.5f);
 
-         //Disable or re-enable the TFOD processor at any time.
+        //Disable or re-enable the TFOD processor at any time.
         //visionPortal.setProcessorEnabled(tfod, true);
 
-    }
-
-
-    // TODO: Refactor moveBackward(time, speed) to RobotClass and update calls in this OpMode
-    // time + speed are parameters for all the movement
-    void moveBackward(int time, double speed) throws InterruptedException {
-        frontLeft.setPower(-speed);
-        frontRight.setPower(-speed);
-        backLeft.setPower(-speed);
-        backRight.setPower(-speed);
-
-        Thread.sleep(time);
-
-        stopAllWheels();
-
-    }
-
-    // TODO: Refactor moveBackward(speed) to RobotClass and update calls in this OpMode
-    void moveBackward(double speed) throws InterruptedException {
-        frontLeft.setPower(-speed);
-        frontRight.setPower(-speed);
-        backLeft.setPower(-speed);
-        backRight.setPower(-speed);
-
-    }
-
-    // TODO: Refactor moveForward(time, speed) to RobotClass and update calls in this OpMode
-    void moveForward(int time, double speed) throws InterruptedException {
-        frontLeft.setPower(speed);
-        frontRight.setPower(speed);
-        backLeft.setPower(speed);
-        backRight.setPower(speed);
-
-        Thread.sleep(time);
-
-        stopAllWheels();
-    }
-
-    // TODO: Refactor moveForward(sp
-    //  eed) to RobotClass and update calls in this OpMode
-    void moveForward(double speed) throws InterruptedException {
-        frontLeft.setPower(speed);
-        frontRight.setPower(speed);
-        backLeft.setPower(speed);
-        backRight.setPower(speed);
-
-    }
-
-    // TODO: Refactor moveLeft(time, speed) to RobotClass and update calls in this OpMode
-    void moveLeft(int time, double speed) throws InterruptedException {
-        frontLeft.setPower(-speed);
-        frontRight.setPower(speed);
-        backLeft.setPower(speed);
-        backRight.setPower(-speed);
-
-        Thread.sleep(time);
-
-        stopAllWheels();
-
-    }
-
-    // TODO: Refactor moveRight(time, speed) to RobotClass and update calls in this OpMode
-    void moveRight(int time, double speed) throws InterruptedException {
-        frontLeft.setPower(speed);
-        frontRight.setPower(-speed);
-        backLeft.setPower(-speed);
-        backRight.setPower(speed);
-
-        Thread.sleep(time);
-
-        stopAllWheels();
-    }
-
-
-    // TODO: Refactor turnRight(time, speed) to RobotClass and update calls in this OpMode
-    void turnRight(int time, double speed) throws InterruptedException {
-        frontLeft.setPower(speed);
-        frontRight.setPower(-speed);
-        backLeft.setPower(speed);
-        backRight.setPower(-speed);
-
-        Thread.sleep(time);
-
-        stopAllWheels();
-
-    }
-
-    // TODO: Refactor turnLeft(time, speed) to RobotClass and update calls in this OpMode
-    void turnLeft(int time, double speed) throws InterruptedException {
-        frontLeft.setPower(-speed);
-        frontRight.setPower(speed);
-        backLeft.setPower(-speed);
-        backRight.setPower(speed);
-
-        Thread.sleep(time);
-
-        stopAllWheels();
-
-    }
-
-    // TODO: Refactor stopAllWheels() to RobotClass and update calls in this OpMode
-    void stopAllWheels() throws InterruptedException {
-
-        frontLeft.setPower(0);
-        frontRight.setPower(0);
-        backLeft.setPower(0);
-        backRight.setPower(0);
-
-    }
-
-    void openLeftIntake() {
-        intakeLeft.setPosition(1.0);
-    }
-
-    void closeLeftIntake() {
-        intakeLeft.setPosition(0.3);
-    }
-
-    void openRightIntake() {
-        intakeRight.setPosition(0.32);
-    }
-
-    void closeRightIntake() {
-        intakeRight.setPosition(0.6);
     }
 
     void lowerRamp() {
@@ -414,7 +331,7 @@ public class AprilTagDetection extends LinearOpMode {
 
         }
         stopCrane();
-        crane.setPower(speed*0.2);
+        crane.setPower(0.2);
         sleep(slow_time) ;
         stopCrane();
     }
@@ -487,7 +404,7 @@ public class AprilTagDetection extends LinearOpMode {
     }
 
     void driveSuspension(double power) {
-       suspension.setPower(power);
+        suspension.setPower(power);
     }
 
     void stopSuspension() {
@@ -511,10 +428,10 @@ public class AprilTagDetection extends LinearOpMode {
         aprilTag = new AprilTagProcessor.Builder().build();
 
         // Create the vision portal by using a builder.
-            visionPortal = new VisionPortal.Builder()
-                    .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
-                    .addProcessor(aprilTag)
-                    .build();
+        visionPortal = new VisionPortal.Builder()
+                .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
+                .addProcessor(aprilTag)
+                .build();
 
         setManualExposure(6, 250);  // Use low exposure time to reduce motion blur
     }
@@ -553,134 +470,6 @@ public class AprilTagDetection extends LinearOpMode {
         }
     }
 
-    public void moveRobot(double x, double y, double yaw) {
-        // Calculate wheel powers.
-        double leftFrontPower    =  x -y -yaw;
-        double rightFrontPower   =  x +y +yaw;
-        double leftBackPower     =  x +y -yaw;
-        double rightBackPower    =  x -y +yaw;
-
-        // Normalize wheel powers to be less than 1.0
-        double max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
-        max = Math.max(max, Math.abs(leftBackPower));
-        max = Math.max(max, Math.abs(rightBackPower));
-
-        if (max > 1.0) {
-            leftFrontPower /= max;
-            rightFrontPower /= max;
-            leftBackPower /= max;
-            rightBackPower /= max;
-        }
-
-        // Send powers to the wheels; note that the camera is at the back so everything is reversed
-        frontLeft.setPower(leftFrontPower);
-        frontRight.setPower(rightFrontPower);
-        backLeft.setPower(leftBackPower);
-        backRight.setPower(rightBackPower);
-    }
-
-     void telemetryAprilTag() {
-
-        List<org.firstinspires.ftc.vision.apriltag.AprilTagDetection> currentDetections = aprilTag.getDetections();
-        telemetry.addData("# AprilTags Detected", currentDetections.size());
-
-        // Step through the list of detections and display info for each one.
-        for (org.firstinspires.ftc.vision.apriltag.AprilTagDetection detection : currentDetections) {
-            if (detection.metadata != null) {
-                telemetry.addLine(String.format("\n==== (ID %d) %s", detection.id, detection.metadata.name));
-                telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f  (inch)", detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.z));
-                telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f  (deg)", detection.ftcPose.pitch, detection.ftcPose.roll, detection.ftcPose.yaw));
-                telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f  (inch, deg, deg)", detection.ftcPose.range, detection.ftcPose.bearing, detection.ftcPose.elevation));
-            } else {
-                telemetry.addLine(String.format("\n==== (ID %d) Unknown", detection.id));
-                telemetry.addLine(String.format("Center %6.0f %6.0f   (pixels)", detection.center.x, detection.center.y));
-            }
-        }   // end for() loop
-
-        // Add "key" information to telemetry
-        telemetry.addLine("\nkey:\nXYZ = X (Right), Y (Forward), Z (Up) dist.");
-        telemetry.addLine("PRY = Pitch, Roll & Yaw (XYZ Rotation)");
-        telemetry.addLine("RBE = Range, Bearing & Elevation");
-
-    }
-
-    void strafeToAprilTag(int tagNumber) throws InterruptedException {
-
-
-        //tag center - x = 3, y = 16.5
-        double tagXPos = 3;
-        double tagYPos = 16.5;
-
-        boolean targetFound = false;
-        desiredTag  = null;
-
-        List<org.firstinspires.ftc.vision.apriltag.AprilTagDetection> currentDetections = aprilTag.getDetections();
-        for (org.firstinspires.ftc.vision.apriltag.AprilTagDetection detection : currentDetections) {
-            if ((detection.metadata != null) &&
-                    (detection.id == tagNumber)  ){
-                targetFound = true;
-                desiredTag = detection;
-                break;  // don't look any further.
-            } else {
-                telemetry.addData("Unknown Target", "Tag ID %d is not in TagLibrary\n", detection.id);
-            }
-        }
-
-        if (targetFound) {
-            telemetry.addData("Target", "ID %d (%s)", desiredTag.id, desiredTag.metadata.name);
-            telemetry.addData("X Value: ",  desiredTag.ftcPose.x);
-            telemetry.addData("Y Value: ",  desiredTag.ftcPose.y);
-
-
-        } else {
-            telemetry.addData("Target", "not found") ;
-        }
-
-        telemetry.update();
-
-
-        if (desiredTag != null) {
-
-            double xPos = desiredTag.ftcPose.x;
-            double yPos = desiredTag.ftcPose.y;
-            double threshold = 0.5;
-
-            if (Math.abs(xPos - tagXPos) > threshold) {
-
-                if (xPos > tagXPos) {
-
-                    moveLeft(25, 0.5);
-
-
-                } else if (xPos < tagXPos) {
-
-                    moveRight(25, 0.5);
-
-                }
-            }
-
-
-            if (Math.abs(yPos - tagYPos) > threshold) {
-
-                if (yPos > tagYPos) {
-
-                    moveBackward(25, 0.1);
-
-
-                } else if (yPos < tagYPos) {
-
-                    moveForward(25, 0.1);
-
-                }
-            }
-
-
-
-
-        }
-
-    }
-
     // function for intaking pixel after detection
     // lower ramp, engaging bucket, closing intake servos
     void intakePixel() {
@@ -699,5 +488,172 @@ public class AprilTagDetection extends LinearOpMode {
         sleep(2000) ;
 
     }
+    private double getDistanceToAprilTag(int zone){
+        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+        for (AprilTagDetection detection : currentDetections) {
+            telemetry.addData("April Tag " + detection.id + " ", detection.ftcPose.x);
+            telemetry.addData("April Tag " + detection.id + " ", detection.ftcPose.y);
+            if(detection.id == zone){
+                    return detection.ftcPose.x;
+            }
+        }
+        telemetry.update();
+        return 0.0;
+    }
+    boolean strafeToAprilTag(int tagNumber) throws InterruptedException {
 
+
+        //tag center - x = 3, y = 16.5
+        double tagXPos = 3;
+        double tagYPos = 16.5;
+
+        boolean targetFound = false;
+        boolean xAligned = false;
+        desiredTag = null;
+
+        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+        for (AprilTagDetection detection : currentDetections) {
+            if ((detection.metadata != null) &&
+                    (detection.id == tagNumber)) {
+                targetFound = true;
+                desiredTag = detection;
+                break;  // don't look any further.
+            } else {
+                telemetry.addData("Unknown Target", "Tag ID %d is not in TagLibrary\n", detection.id);
+            }
+        }
+
+        if (targetFound) {
+            telemetry.addData("Target", "ID %d (%s)", desiredTag.id, desiredTag.metadata.name);
+            telemetry.addData("X Value: ", desiredTag.ftcPose.x);
+            telemetry.addData("Y Value: ", desiredTag.ftcPose.y);
+
+
+        } else {
+            telemetry.addData("Target", "not found");
+        }
+
+        telemetry.update();
+
+
+        if (desiredTag != null) {
+
+            double xPos = desiredTag.ftcPose.x;
+            double yPos = desiredTag.ftcPose.y;
+            double threshold = 0.5;
+
+            if (Math.abs(xPos - tagXPos) > threshold) {
+
+                if (xPos > tagXPos) {
+
+                    drive.moveLeft(25, 0.5);
+
+
+                } else if (xPos < tagXPos) {
+
+                    drive.moveRight(25, 0.5);
+
+                }
+            }else{
+                xAligned = true;
+            }
+
+
+            if (Math.abs(yPos - tagYPos) > threshold) {
+
+                if (yPos > tagYPos) {
+
+                    drive.moveBackwards(25, 0.1);
+
+
+                } else if (yPos < tagYPos) {
+
+                    drive.moveForward(25, 0.1);
+
+                }
+            }else{
+                if(xAligned){
+                    return true;
+                }
+            }
+
+        }
+        return false;
+    }
+    private boolean rightAprilTag(int zone){
+        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+        for (AprilTagDetection detection : currentDetections) {
+            if(detection.id == zone){
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+
+    int aprilTagAdjustment() {
+
+        int direction = 0;
+
+        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+        for (AprilTagDetection detection : currentDetections) {
+            if ((detection.metadata != null) && (detection.id == aprilTagZone)) {
+                desiredTag = detection;
+                break;  // don't look any further.
+            } else {
+
+                desiredTag = detection;
+
+            }
+        }
+
+        currentBearing = desiredTag.ftcPose.bearing;
+        currentRange = desiredTag.ftcPose.range;
+
+        //TODO: i think the strafe correction should be added after the trig calculation
+        //TODO: you may want to add telemetry here too to see what value are going into the calculation and the result
+        strafeDistance = currentRange * (Math.sin((currentBearing + strafeCorrection)));
+
+        //strafing
+        if (currentBearing > 0) {
+
+            // move left (right since backwards)
+            direction =  1;
+
+        } else if (currentBearing < 0) {
+
+            // move right (left since backwards)
+            direction = -1;
+
+        }
+
+        return direction;
+
+    }
+
+    private void telemetryAprilTag() {
+
+        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+        telemetry.addData("# AprilTags Detected", currentDetections.size());
+
+        // Step through the list of detections and display info for each one.
+        for (AprilTagDetection detection : currentDetections) {
+            if (detection.metadata != null) {
+                telemetry.addLine(String.format("\n==== (ID %d) %s", detection.id, detection.metadata.name));
+                telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f  (inch)", detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.z));
+                telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f  (deg)", detection.ftcPose.pitch, detection.ftcPose.roll, detection.ftcPose.yaw));
+                telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f  (inch, deg, deg)", detection.ftcPose.range, detection.ftcPose.bearing, detection.ftcPose.elevation));
+            } else {
+                telemetry.addLine(String.format("\n==== (ID %d) Unknown", detection.id));
+                telemetry.addLine(String.format("Center %6.0f %6.0f   (pixels)", detection.center.x, detection.center.y));
+            }
+        }   // end for() loop
+
+        // Add "key" information to telemetry
+        telemetry.addLine("\nkey:\nXYZ = X (Right), Y (Forward), Z (Up) dist.");
+        telemetry.addLine("PRY = Pitch, Roll & Yaw (XYZ Rotation)");
+        telemetry.addLine("RBE = Range, Bearing & Elevation");
+
+    }
 }

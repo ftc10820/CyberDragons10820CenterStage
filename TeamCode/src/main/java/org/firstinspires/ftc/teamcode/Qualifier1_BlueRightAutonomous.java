@@ -137,7 +137,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 .build();
 
         Trajectory zone1_2 = drive.trajectoryBuilder(zone1_1.end())
-                .lineTo(new Vector2d(-58,32))
+                .lineTo(new Vector2d(-56,32))
                 .build();
 
         Trajectory zone3_1 = drive.trajectoryBuilder(traj1.end())
@@ -153,7 +153,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 .build();
 
         Trajectory backstage_2 = drive.trajectoryBuilder(backstage_1.end())
-                .lineTo(new Vector2d(46, 10))
+                .lineTo(new Vector2d(42, 10))
                 .build();
 
         Trajectory zone2_traj1 = drive.trajectoryBuilder(startPose)
@@ -176,8 +176,8 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 .forward(6.0)
                 .build();
 
-        Trajectory backstage_3 = drive.trajectoryBuilder(backstage_2.end().plus(new Pose2d(0,0, Math.toRadians(180))))
-                .lineTo(new Vector2d(42, 40))
+        Trajectory backstage_3 = drive.trajectoryBuilder(backstage_2.end().plus(new Pose2d(0,0, Math.toRadians(200))))
+                .strafeRight(28.0)
                 .build();
 
         Trajectory adjustment = drive.trajectoryBuilder(backstage_3.end())
@@ -228,7 +228,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 drive.followTrajectory(backstage_1);
                 drive.followTrajectory(backstage_2);
                 drive.turn(Math.toRadians(200));
-                //drive.followTrajectory(backstage_3);
+                drive.followTrajectory(backstage_3);
 
 
 
