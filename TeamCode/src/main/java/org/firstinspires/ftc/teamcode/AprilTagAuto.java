@@ -91,6 +91,10 @@ public class AprilTagAuto extends LinearOpMode {
     public static double currentBearing = 10.0;
     public static double currentRange = 10.0;
 
+    public static double currentYaw = 10.0;
+
+    public static double desiredYaw = 10.0;
+
     public static double strafeCorrection = 10.0;
     public static double turnCorrection = 0.0;
 
@@ -165,6 +169,9 @@ public class AprilTagAuto extends LinearOpMode {
                 drive.followTrajectory(strafeLeftAprilTag);
 
             }
+
+            drive.turn(turnDistance);
+
 
         }
 
@@ -608,12 +615,32 @@ public class AprilTagAuto extends LinearOpMode {
             }
         }
 
+
+
+
+
         currentBearing = desiredTag.ftcPose.bearing;
         currentRange = desiredTag.ftcPose.range;
+        currentYaw = desiredTag.ftcPose.yaw;
+
+        telemetry.addData("tag using: ", desiredTag.id);
+        telemetry.addData("updated bearing: ", currentBearing);
+        telemetry.addData("updated range: ", currentRange);
+        telemetry.addData("updated yaw: ", currentYaw);
+        telemetry.update();
+
 
         //TODO: i think the strafe correction should be added after the trig calculation
         //TODO: you may want to add telemetry here too to see what value are going into the calculation and the result
-        strafeDistance = currentRange * (Math.sin((currentBearing + strafeCorrection)));
+        strafeDistance = currentRange * (Math.sin((Math.toRadians(currentBearing + strafeCorrection))));
+        turnDistance = Math.toRadians(-1 * (desiredYaw - currentYaw));
+
+        telemetry.addData("strafeDistance: ", strafeDistance);
+        telemetry.addData("turn angle: ", turnDistance);
+        telemetry.update();
+
+        // correction if detected tag isnt desired zone
+        strafeDistance += 6.0 * (aprilTagZone - desiredTag.id);
 
         //strafing
         if (currentBearing > 0) {
