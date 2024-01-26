@@ -96,7 +96,6 @@ public class AprilTagAuto extends LinearOpMode {
     public static double desiredYaw = 10.0;
 
     public static double strafeCorrection = 10.0;
-    public static double turnCorrection = 0.0;
 
     public static double strafeDistance = 5.0;
     public static double turnDistance = 0;
