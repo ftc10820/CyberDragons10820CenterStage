@@ -541,7 +541,7 @@ public class Qualifier1_TeleOp extends LinearOpMode {
     }
 
     void openLeftIntake() {
-        intakeLeft.setPosition(1.0);
+        intakeLeft.setPosition(0.9);
     }
 
     void closeLeftIntake() {
