@@ -111,11 +111,27 @@ public class Qualifier1_BlueLeftAutonomous extends LinearOpMode {
 
     int craneMax = 4500;
 
+    //april tag adjustment variables
+
+    public static int aprilTagZone;
+
+    public static double currentBearing = 10.0;
+    public static double currentRange = 10.0;
+
+    public static double currentYaw = 10.0;
+
+    public static double desiredYaw = 10.0;
+
+    public static double strafeCorrection = 10.0;
+
+    public static double strafeDistance = 5.0;
+    public static double turnDistance = 0;
 
     @Override
     public void runOpMode() throws InterruptedException {
 
         initialize();
+        initAprilTag();
         initIntakePlatform();
         closeLeftIntake();
 
@@ -211,35 +227,18 @@ public class Qualifier1_BlueLeftAutonomous extends LinearOpMode {
         }
 
         zone = vision.zone;
+        aprilTagZone = vision.zone;
 
         waitForStart();
 
 
         if (opModeIsActive()) {
 
-
-
             if (zone == 1) {
 
                 drive.followTrajectory(traj1);
                 openLeftIntake();
                 drive.followTrajectory(zone1_1);
-
-                extendCraneUseSensor(0.8, 5000, 15, 2500) ;
-                liftCraneSlightly(0.2);
-                sleep(50) ;
-                retractCraneHome(0.8, 1000);
-                positionCraneBase();
-                retractCraneHome(0.8, 2000);
-
-                /*drive.followTrajectory(zone1_2);
-                drive.followTrajectory(backstage_1);
-                drive.followTrajectory(backstage_2);
-                drive.turn(Math.toRadians(200));*/
-                //drive.followTrajectory(backstage_3);
-
-
-
 
             } else if (zone == 2) {
 
@@ -248,9 +247,7 @@ public class Qualifier1_BlueLeftAutonomous extends LinearOpMode {
                 drive.followTrajectory(zone2_traj2);
                 drive.turn(Math.toRadians(90));
                 drive.followTrajectory(zone2_traj3);
-
-                //drive.followTrajectory(zone2_traj4);
-
+                drive.followTrajectory(zone2_traj4);
 
             } else {
 
@@ -259,22 +256,42 @@ public class Qualifier1_BlueLeftAutonomous extends LinearOpMode {
                 openLeftIntake();
                 drive.followTrajectory(zone3_2);
 
-                extendCraneUseSensor(0.8, 5000, 15, 2500) ;
-                liftCraneSlightly(0.2);
-                sleep(50) ;
-                retractCraneHome(0.8, 1000);
-                positionCraneBase();
-                retractCraneHome(0.8, 2000);
+            }
 
-                /*drive.followTrajectory(backstage_1);
-                drive.followTrajectory(backstage_2);
-                drive.turn(Math.toRadians(200));*/
-                //drive.followTrajectory(backstage_3);
+            Pose2d aprilTagStartPose = new Pose2d(0, 0, Math.toRadians(180));
+            drive.setPoseEstimate(aprilTagStartPose);//april tag paths
+
+            // april tag alignment
+            if (aprilTagAdjustment() == 1) {
 
 
 
+                Trajectory strafeRightAprilTag = drive.trajectoryBuilder(aprilTagStartPose)
+                        .strafeRight(strafeDistance)
+                        .build();
+
+                drive.followTrajectory(strafeRightAprilTag);
+
+            } else {
+
+                Trajectory strafeLeftAprilTag = drive.trajectoryBuilder(aprilTagStartPose)
+                        .strafeLeft(strafeDistance)
+                        .build();
+
+                drive.followTrajectory(strafeLeftAprilTag);
 
             }
+
+            drive.turn(turnDistance);
+
+            positionCraneLow();
+            extendCraneUseSensor(0.8, 5000, 15, 2500) ;
+            liftCraneSlightly(0.2);
+            sleep(50) ;
+            retractCraneHome(0.8, 1000);
+            positionCraneBase();
+            retractCraneHome(0.8, 2000);
+
             /*
             // april tag logic
             initAprilTag();
@@ -396,11 +413,11 @@ public class Qualifier1_BlueLeftAutonomous extends LinearOpMode {
     }
 
     void openRightIntake() {
-        intakeRight.setPosition(0.32);
+        intakeRight.setPosition(0);
     }
 
     void closeRightIntake() {
-        intakeRight.setPosition(0.6);
+        intakeRight.setPosition(1.0);
     }
 
     void initAutonomous() {
@@ -790,6 +807,62 @@ public class Qualifier1_BlueLeftAutonomous extends LinearOpMode {
 
     void liftCraneSlightly(double incr) {
         craneAngle.setPosition(craneAngle.getPosition() + incr);
+    }
+
+    int aprilTagAdjustment() {
+
+        int direction = 0;
+
+        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+        for (AprilTagDetection detection : currentDetections) {
+            if ((detection.metadata != null) && (detection.id == aprilTagZone)) {
+                desiredTag = detection;
+                break;  // don't look any further.
+            } else {
+
+                desiredTag = detection;
+
+            }
+        }
+
+        currentBearing = desiredTag.ftcPose.bearing;
+        currentRange = desiredTag.ftcPose.range;
+        currentYaw = desiredTag.ftcPose.yaw;
+
+        telemetry.addData("tag using: ", desiredTag.id);
+        telemetry.addData("updated bearing: ", currentBearing);
+        telemetry.addData("updated range: ", currentRange);
+        telemetry.addData("updated yaw: ", currentYaw);
+        telemetry.update();
+
+
+        //TODO: i think the strafe correction should be added after the trig calculation
+        //TODO: you may want to add telemetry here too to see what value are going into the calculation and the result
+        strafeDistance = currentRange * (Math.sin((Math.toRadians(currentBearing + strafeCorrection))));
+        turnDistance = Math.toRadians(-1 * (desiredYaw - currentYaw));
+
+        telemetry.addData("strafeDistance: ", strafeDistance);
+        telemetry.addData("turn angle: ", turnDistance);
+        telemetry.update();
+
+        // correction if detected tag isnt desired zone
+        strafeDistance += 6.0 * (aprilTagZone - desiredTag.id);
+
+        //strafing
+        if (currentBearing > 0) {
+
+            // move left (right since backwards)
+            direction =  1;
+
+        } else if (currentBearing < 0) {
+
+            // move right (left since backwards)
+            direction = -1;
+
+        }
+
+        return direction;
+
     }
 
 }

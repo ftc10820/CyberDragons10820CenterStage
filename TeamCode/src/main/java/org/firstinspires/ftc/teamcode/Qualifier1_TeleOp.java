@@ -128,7 +128,9 @@ public class Qualifier1_TeleOp extends LinearOpMode {
 
         while (opModeIsActive()) {
 
-            telemetry.addData("encoder value: ", crane.getCurrentPosition());
+            telemetry.addData("crane encoder value: ", crane.getCurrentPosition());
+            telemetry.addData("right color sensor value: ", getPixelDetectionRightVal());
+            telemetry.addData("left color sensor value: ", getPixelDetectionLeftVal());
             telemetry.update();
 
             // light up the LEDs
@@ -355,8 +357,8 @@ public class Qualifier1_TeleOp extends LinearOpMode {
         droneLauncher = hardwareMap.get(Servo.class, "DroneLauncher");
 
         // Drivers being used for LEDs
-        ledRight = hardwareMap.get(DcMotorSimple.class, "ledRight");
-        ledLeft = hardwareMap.get(DcMotorSimple.class, "ledLeft");
+        ledRight = hardwareMap.get(DcMotorSimple.class, "LedRight");
+        ledLeft = hardwareMap.get(DcMotorSimple.class, "LedLeft");
 
         //sensors
         touchCrane = hardwareMap.get(TouchSensor.class, "Touch");
