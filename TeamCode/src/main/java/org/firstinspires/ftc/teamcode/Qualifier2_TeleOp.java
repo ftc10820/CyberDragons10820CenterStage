@@ -196,7 +196,7 @@ public class Qualifier2_TeleOp extends LinearOpMode {
             }
 
             if (gamepad1.y) {
-                extendCraneUseSensor(0.8, 5000, 15, 2500) ;
+                extendCraneUseSensorVelocity(4000, 5000, 15, 2000); ;
                 liftCraneSlightly(0.2);
                 sleep(50) ;
                 retractCraneHome(0.8, 1000);
@@ -220,11 +220,11 @@ public class Qualifier2_TeleOp extends LinearOpMode {
             // take distance sensor and touch sensor into account
             // logic for manual control of linear slide
             double cranePower = -gamepad2.left_stick_y;
-            if ((cranePower > 0) && (distanceBucket.getDistance(DistanceUnit.CM) < 15))
+            /*if ((cranePower > 0) && (distanceBucket.getDistance(DistanceUnit.CM) < 15))
                 cranePower *= 0.2;
             if ((cranePower < 0) && (touchCrane.isPressed()))
-                cranePower *= 0.1;
-            extendCrane(cranePower);
+                cranePower *= 0.1;*/
+            extendCraneVelocity(cranePower*4000);
 
             // logic for manual lifting of crane
             if (gamepad2.dpad_left) {
@@ -586,7 +586,7 @@ public class Qualifier2_TeleOp extends LinearOpMode {
         crane.setPower(speed);
     }
     void extendCraneVelocity(double vel) {
-        crane.setVelocity(400);
+        crane.setVelocity(vel);
     }
     // see overloaded function ; use appropriately
     void extendCraneUseSensor(double speed) {
@@ -599,6 +599,19 @@ public class Qualifier2_TeleOp extends LinearOpMode {
 
         }
         stopCrane();
+
+    }
+    void extendCraneUseSensorVelocity(double vel) {
+        // extend crane till a timeout value or till the sensor detects closeness to backdrop
+        final int EXTEND_TIMEOUT = 2000 ; // timeout depends on the speed
+        final double BACKDROP_DIST_IN_CM = 8.0 ;
+        eTime1.reset();
+        crane.setVelocity(vel);
+        while((distanceBucket.getDistance(DistanceUnit.CM) > BACKDROP_DIST_IN_CM) && (eTime1.milliseconds() < EXTEND_TIMEOUT)) {
+
+        }
+        stopCrane();
+
     }
     void extendCraneUseSensor(double speed, int timeout_milli, double backdrop_dist_cm, int slow_time) {
         // extend crane till given timeout value or till the sensor detects proximity to backdrop based on given distance
@@ -613,6 +626,35 @@ public class Qualifier2_TeleOp extends LinearOpMode {
 
         if (crane.getCurrentPosition() < 4000) {
             crane.setPower(speed*0.2);
+            sleep(slow_time);
+            stopCrane();
+
+/*
+            crane.setTargetPosition(crane.getCurrentPosition() + (8 * 63)); // calculate 63 encoder ticks per cm
+            crane.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            crane.setPower(speed*0.2);
+
+ */
+
+        }
+
+
+
+
+    }
+    void extendCraneUseSensorVelocity(double vel, int timeout_milli, double backdrop_dist_cm, int slow_time) {
+        // extend crane till given timeout value or till the sensor detects proximity to backdrop based on given distance
+        // NOTE: timeout depends on the speed
+        eTime1.reset();
+        crane.setVelocity(vel);
+        while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (crane.getCurrentPosition() < craneMax)) {
+
+        }
+        stopCrane();
+        //sleep(500);
+
+        if (crane.getCurrentPosition() < 4000) {
+            crane.setVelocity(vel*0.1);
             sleep(slow_time);
             stopCrane();
 
@@ -666,7 +708,7 @@ public class Qualifier2_TeleOp extends LinearOpMode {
         craneAngle.setPosition(0.70);
     }
     void positionCraneHigh() {
-        craneAngle.setPosition(0.85);
+        craneAngle.setPosition(0.91);
     }
 
     void positionCraneBase() {
