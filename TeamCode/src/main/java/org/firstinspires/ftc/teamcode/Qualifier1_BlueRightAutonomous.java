@@ -277,7 +277,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
 
             telemetryAprilTag();
             telemetry.update();
-            sleep(2000);
+            sleep(750);
 
             //april tag alignment
             if (aprilTagAdjustment() == -1) {
@@ -843,9 +843,15 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
         turnDistance = Math.toRadians(-1 * (desiredYaw - currentYaw));
 
 
-
+/* TODO: Coach Weston: adjustment should still be 6 but we need to make sure it's
+         aprilTagZone - desiredTag.id or is it desiredTag.id - aprilTagZone?
+*/
         // correction if detected tag isnt desired zone
         //strafeDistance += 8.0 * (aprilTagZone - desiredTag.id);
+/*
+ TODO: Coach Weston: We may want to subtract a final 2-4 inches since we want the camera
+       about 2 inches to the left of the bucket.
+*/
 
         telemetry.addData("strafeDistance: ", strafeDistance);
         telemetry.addData("turn angle: ", turnDistance);
