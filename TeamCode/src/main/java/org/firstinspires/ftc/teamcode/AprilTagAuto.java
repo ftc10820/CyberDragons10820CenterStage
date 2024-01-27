@@ -151,26 +151,27 @@ public class AprilTagAuto extends LinearOpMode {
         waitForStart();
         if (opModeIsActive()) {
 
-            if (aprilTagAdjustment() == 1) {
+            if (aprilTagAdjustment() == -1) {
 
-                strafeRightAprilTag = drive.trajectoryBuilder(startPose)
-                        .strafeRight(strafeDistance)
+                drive.turn(turnDistance);
+
+                strafeRightAprilTag = drive.trajectoryBuilder(startPose.plus(new Pose2d(0,0, Math.toRadians(turnDistance))))
+                        .strafeRight(Math.abs(strafeDistance))
                         .build();
 
                 drive.followTrajectory(strafeRightAprilTag);
 
-            } else {
+            } else if (aprilTagAdjustment() == 1) {
 
-                strafeLeftAprilTag = drive.trajectoryBuilder(startPose)
-                        .strafeLeft(strafeDistance)
+                drive.turn(turnDistance);
+
+                strafeLeftAprilTag = drive.trajectoryBuilder(startPose.plus(new Pose2d(0,0, Math.toRadians(turnDistance))))
+                        .strafeLeft(Math.abs(strafeDistance))
                         .build();
 
                 drive.followTrajectory(strafeLeftAprilTag);
 
             }
-
-            drive.turn(turnDistance);
-
 
         }
 
@@ -597,7 +598,6 @@ public class AprilTagAuto extends LinearOpMode {
     }
 
 
-
     int aprilTagAdjustment() {
 
         int direction = 0;
@@ -614,9 +614,10 @@ public class AprilTagAuto extends LinearOpMode {
             }
         }
 
+        if (desiredTag == null) {
 
-
-
+            return 0;
+        }
 
         currentBearing = desiredTag.ftcPose.bearing;
         currentRange = desiredTag.ftcPose.range;
@@ -634,20 +635,22 @@ public class AprilTagAuto extends LinearOpMode {
         strafeDistance = currentRange * (Math.sin((Math.toRadians(currentBearing + strafeCorrection))));
         turnDistance = Math.toRadians(-1 * (desiredYaw - currentYaw));
 
+
+
+        // correction if detected tag isnt desired zone
+        strafeDistance += 8.0 * (aprilTagZone - desiredTag.id);
+
         telemetry.addData("strafeDistance: ", strafeDistance);
         telemetry.addData("turn angle: ", turnDistance);
         telemetry.update();
 
-        // correction if detected tag isnt desired zone
-        strafeDistance += 6.0 * (aprilTagZone - desiredTag.id);
-
         //strafing
-        if (currentBearing > 0) {
+        if (strafeDistance > 0) {
 
             // move left (right since backwards)
             direction =  1;
 
-        } else if (currentBearing < 0) {
+        } else if (strafeDistance < 0) {
 
             // move right (left since backwards)
             direction = -1;

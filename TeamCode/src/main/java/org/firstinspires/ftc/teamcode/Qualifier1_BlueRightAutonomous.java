@@ -77,15 +77,18 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
     public ColorSensor colorFieldLine;
 
     // Vision portal and vision processing pipelines
-    private TfodProcessor tfod;
+
     private AprilTagProcessor aprilTag;
+
+    private TfodProcessor tfod;
+
+    private VisionPortal myVisionPortal;
 
     private VisionPortal visionPortal;
 
     int zone = 1;
 
     VisionSubsystem vision;
-
 
     // helper variables
     ElapsedTime eTime1 = new ElapsedTime() ;
@@ -132,7 +135,6 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
 
         initialize();
-        initAprilTag();
         initIntakePlatform();
         closeRightIntake();
 
@@ -154,7 +156,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 .build();
 
         Trajectory zone1_2 = drive.trajectoryBuilder(zone1_1.end())
-                .lineTo(new Vector2d(-56,32))
+                .lineTo(new Vector2d(-58,32))
                 .build();
 
         Trajectory zone3_1 = drive.trajectoryBuilder(traj1.end())
@@ -182,7 +184,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 .build();
 
         Trajectory zone2_traj3 = drive.trajectoryBuilder(zone2_traj2.end().plus(new Pose2d(0,0, Math.toRadians(90))))
-                .lineTo(new Vector2d(46, 10))
+                .lineTo(new Vector2d(42, 10))
                 .build();
 
         Trajectory zone2_traj4 = drive.trajectoryBuilder(zone2_traj3.end())
@@ -193,8 +195,8 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 .forward(6.0)
                 .build();
 
-        Trajectory backstage_3 = drive.trajectoryBuilder(backstage_2.end().plus(new Pose2d(0,0, Math.toRadians(200))))
-                .strafeRight(28.0)
+        Trajectory backstage_3 = drive.trajectoryBuilder(backstage_2.end().plus(new Pose2d(0,0, Math.toRadians(180))))
+                .strafeRight(18.0)
                 .build();
 
         Trajectory adjustment = drive.trajectoryBuilder(backstage_3.end())
@@ -235,6 +237,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
 
         if (opModeIsActive()) {
 
+            initAprilTag();
 
             if (zone == 1) {
 
@@ -244,11 +247,8 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 drive.followTrajectory(zone1_2);
                 drive.followTrajectory(backstage_1);
                 drive.followTrajectory(backstage_2);
-                drive.turn(Math.toRadians(200));
+                drive.turn(Math.toRadians(190));
                 drive.followTrajectory(backstage_3);
-
-
-
 
             } else if (zone == 2) {
 
@@ -259,7 +259,6 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 drive.followTrajectory(zone2_traj3);
                 drive.followTrajectory(zone2_traj4);
 
-
             } else {
 
                 drive.followTrajectory(traj1);
@@ -268,37 +267,40 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 drive.followTrajectory(zone3_2);
                 drive.followTrajectory(backstage_1);
                 drive.followTrajectory(backstage_2);
-                drive.turn(Math.toRadians(200));
+                drive.turn(Math.toRadians(190));
                 drive.followTrajectory(backstage_3);
-
 
             }
 
             Pose2d aprilTagStartPose = new Pose2d(0, 0, Math.toRadians(180));
             drive.setPoseEstimate(aprilTagStartPose);//april tag paths
 
+            telemetryAprilTag();
+            telemetry.update();
+            sleep(2000);
+
             //april tag alignment
-            if (aprilTagAdjustment() == 1) {
+            if (aprilTagAdjustment() == -1) {
 
+                drive.turn(turnDistance);
 
-
-                Trajectory strafeRightAprilTag = drive.trajectoryBuilder(aprilTagStartPose)
-                        .strafeRight(strafeDistance)
+                Trajectory strafeRightAprilTag = drive.trajectoryBuilder(aprilTagStartPose.plus(new Pose2d(0,0, Math.toRadians(turnDistance))))
+                        .strafeRight(Math.abs(strafeDistance))
                         .build();
 
                 drive.followTrajectory(strafeRightAprilTag);
 
-            } else {
+            } else if (aprilTagAdjustment() == 1) {
 
-                Trajectory strafeLeftAprilTag = drive.trajectoryBuilder(aprilTagStartPose)
-                        .strafeLeft(strafeDistance)
+                drive.turn(turnDistance);
+
+                Trajectory strafeLeftAprilTag = drive.trajectoryBuilder(aprilTagStartPose.plus(new Pose2d(0,0, Math.toRadians(turnDistance))))
+                        .strafeLeft(Math.abs(strafeDistance))
                         .build();
 
                 drive.followTrajectory(strafeLeftAprilTag);
 
             }
-
-            drive.turn(turnDistance);
 
             positionCraneLow();
             extendCraneUseSensor(0.8, 5000, 15, 2500) ;
@@ -819,6 +821,11 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
             }
         }
 
+        if (desiredTag == null) {
+
+            return 0;
+        }
+
         currentBearing = desiredTag.ftcPose.bearing;
         currentRange = desiredTag.ftcPose.range;
         currentYaw = desiredTag.ftcPose.yaw;
@@ -835,20 +842,22 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
         strafeDistance = currentRange * (Math.sin((Math.toRadians(currentBearing + strafeCorrection))));
         turnDistance = Math.toRadians(-1 * (desiredYaw - currentYaw));
 
+
+
+        // correction if detected tag isnt desired zone
+        //strafeDistance += 8.0 * (aprilTagZone - desiredTag.id);
+
         telemetry.addData("strafeDistance: ", strafeDistance);
         telemetry.addData("turn angle: ", turnDistance);
         telemetry.update();
 
-        // correction if detected tag isnt desired zone
-        strafeDistance += 6.0 * (aprilTagZone - desiredTag.id);
-
         //strafing
-        if (currentBearing > 0) {
+        if (strafeDistance > 0) {
 
             // move left (right since backwards)
             direction =  1;
 
-        } else if (currentBearing < 0) {
+        } else if (strafeDistance < 0) {
 
             // move right (left since backwards)
             direction = -1;
@@ -856,6 +865,31 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
         }
 
         return direction;
+
+    }
+
+    private void telemetryAprilTag() {
+
+        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+        telemetry.addData("# AprilTags Detected", currentDetections.size());
+
+        // Step through the list of detections and display info for each one.
+        for (AprilTagDetection detection : currentDetections) {
+            if (detection.metadata != null) {
+                telemetry.addLine(String.format("\n==== (ID %d) %s", detection.id, detection.metadata.name));
+                telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f  (inch)", detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.z));
+                telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f  (deg)", detection.ftcPose.pitch, detection.ftcPose.roll, detection.ftcPose.yaw));
+                telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f  (inch, deg, deg)", detection.ftcPose.range, detection.ftcPose.bearing, detection.ftcPose.elevation));
+            } else {
+                telemetry.addLine(String.format("\n==== (ID %d) Unknown", detection.id));
+                telemetry.addLine(String.format("Center %6.0f %6.0f   (pixels)", detection.center.x, detection.center.y));
+            }
+        }   // end for() loop
+
+        // Add "key" information to telemetry
+        telemetry.addLine("\nkey:\nXYZ = X (Right), Y (Forward), Z (Up) dist.");
+        telemetry.addLine("PRY = Pitch, Roll & Yaw (XYZ Rotation)");
+        telemetry.addLine("RBE = Range, Bearing & Elevation");
 
     }
 }

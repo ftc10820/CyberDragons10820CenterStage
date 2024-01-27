@@ -196,7 +196,7 @@ public class Qualifier1_TeleOp extends LinearOpMode {
             }
 
             if (gamepad1.y) {
-                extendCraneUseSensor(0.8, 5000, 15, 2500) ;
+                extendCraneUseSensor(0.8, 5000, 15, 1500) ;
                 liftCraneSlightly(0.2);
                 sleep(50) ;
                 retractCraneHome(0.8, 1000);
@@ -296,10 +296,12 @@ public class Qualifier1_TeleOp extends LinearOpMode {
         double x = gamepad1.left_stick_x; // strafing left or right
         double rx = gamepad1.right_stick_x; // turn left (anti-clockwise) or right (clockwise)
 
+        /*
         // cube inputs to reduce initial acceleration
         y = Math.pow(y, 3);
         x = Math.pow(x, 3);
         rx = Math.pow(rx, 3);
+         */
 
         double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
         frontLeftPower = (y + x + rx) / denominator;
