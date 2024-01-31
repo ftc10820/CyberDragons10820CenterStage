@@ -11,12 +11,10 @@ import com.acmerobotics.roadrunner.trajectory.constraints.MinVelocityConstraint;
 import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryVelocityConstraint;
 import com.acmerobotics.roadrunner.trajectory.constraints.TranslationalVelocityConstraint;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
@@ -25,7 +23,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
-import org.firstinspires.ftc.robotcore.external.navigation.AngularVelocity;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
@@ -34,15 +31,14 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
-import java.util.List;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
 @Autonomous
 @Config
-@Disabled
-public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
+public class Qualifier2_BlueLeft extends LinearOpMode {
 
     //private org.firstinspires.ftc.vision.apriltag.AprilTagDetection desiredTag = null;
 
@@ -139,6 +135,8 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
     public static double strafeDistance = 5.0;
     public static double turnDistance = 0;
 
+    public double slowerVelocity = 20.0;
+
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -152,28 +150,30 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
 
         drive = new SampleMecanumDrive(hardwareMap);
 
+        drive = new SampleMecanumDrive(hardwareMap);
+
         //Starting the robot at the bottom left (blue auto)
-        Pose2d startPose = new Pose2d(-36, 60, Math.toRadians(90));
+        Pose2d startPose = new Pose2d(12, 60, Math.toRadians(90));
         drive.setPoseEstimate(startPose);
 
         Trajectory traj1 = drive.trajectoryBuilder(startPose)
-                .lineToLinearHeading(new Pose2d(-40,32, Math.toRadians(0)))
+                .lineToLinearHeading(new Pose2d(28,34, Math.toRadians(180)))
                 .build();
 
         Trajectory zone1_1 = drive.trajectoryBuilder(traj1.end())
-                .forward(10.0)
+                .back(16.0)
                 .build();
 
         Trajectory zone1_2 = drive.trajectoryBuilder(zone1_1.end())
-                .lineTo(new Vector2d(-58,32))
+                .lineTo(new Vector2d(-60,32))
                 .build();
 
         Trajectory zone3_1 = drive.trajectoryBuilder(traj1.end())
-                .back(13.0)
+                .forward(23.0)
                 .build();
 
         Trajectory zone3_2 = drive.trajectoryBuilder(zone3_1.end())
-                .lineTo(new Vector2d(-58,32))
+                .back(40)
                 .build();
 
         Trajectory backstage_1 = drive.trajectoryBuilder(zone3_2.end())
@@ -193,11 +193,11 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 .build();
 
         Trajectory zone2_traj3 = drive.trajectoryBuilder(zone2_traj2.end().plus(new Pose2d(0,0, Math.toRadians(90))))
-                .lineTo(new Vector2d(42, 10))
+                .back(32)
                 .build();
 
         Trajectory zone2_traj4 = drive.trajectoryBuilder(zone2_traj3.end())
-                .lineTo(new Vector2d(42, 34))
+                .strafeRight(24.0)
                 .build();
 
         Trajectory zone2_traj5 = drive.trajectoryBuilder(zone2_traj4.end())
@@ -205,7 +205,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 .build();
 
         Trajectory backstage_3 = drive.trajectoryBuilder(backstage_2.end().plus(new Pose2d(0,0, Math.toRadians(180))))
-                .lineTo(new Vector2d(42, 34))
+                .lineTo(new Vector2d(42, 40))
                 .build();
 
         Trajectory adjustment = drive.trajectoryBuilder(backstage_3.end())
@@ -251,18 +251,13 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
             if (zone == 1) {
 
                 drive.followTrajectory(traj1);
+                openLeftIntake();
                 drive.followTrajectory(zone1_1);
-                openRightIntake();
-                drive.followTrajectory(zone1_2);
-                drive.followTrajectory(backstage_1);
-                drive.followTrajectory(backstage_2);
-                drive.turn(Math.toRadians(190));
-                drive.followTrajectory(backstage_3);
 
             } else if (zone == 2) {
 
                 drive.followTrajectory(zone2_traj1);
-                openRightIntake();
+                openLeftIntake();
                 drive.followTrajectory(zone2_traj2);
                 drive.turn(Math.toRadians(90));
                 drive.followTrajectory(zone2_traj3);
@@ -272,12 +267,8 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
 
                 drive.followTrajectory(traj1);
                 drive.followTrajectory(zone3_1);
-                openRightIntake();
+                openLeftIntake();
                 drive.followTrajectory(zone3_2);
-                drive.followTrajectory(backstage_1);
-                drive.followTrajectory(backstage_2);
-                drive.turn(Math.toRadians(190));
-                drive.followTrajectory(backstage_3);
 
             }
 
@@ -298,6 +289,8 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
 
             drive.followTrajectory(strafeAprilTag);
 
+            visionPortal.setProcessorEnabled(aprilTag, false);
+
             positionCraneLow();
             extendCraneUseSensorVelocity(4000, 5000, 15, 2000); ;
             liftCraneSlightly(0.2);
@@ -305,6 +298,14 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
             retractCraneHome(0.8, 1000);
             positionCraneBase();
             retractCraneHome(0.8, 2000);
+
+
+            Trajectory park = drive.trajectoryBuilder(strafeAprilTag.end())
+                    .strafeRight(18.0 + (6 * (aprilTagZone - 1)))
+                    .build();
+
+            drive.followTrajectory(park);
+
 
             // april tag logic
             // initAprilTag();
@@ -552,6 +553,8 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
         crane.setVelocity(vel);
         while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (crane.getCurrentPosition() < craneMax)) {
 
+            telemetry.addData("distance" , distanceBucket.getDistance(DistanceUnit.CM));
+            telemetry.update();
         }
         stopCrane();
         //sleep(500);
@@ -749,8 +752,8 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
         boolean xAligned = false;
         desiredTag = null;
 
-        List<org.firstinspires.ftc.vision.apriltag.AprilTagDetection> currentDetections = aprilTag.getDetections();
-        for (org.firstinspires.ftc.vision.apriltag.AprilTagDetection detection : currentDetections) {
+        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+        for (AprilTagDetection detection : currentDetections) {
             if ((detection.metadata != null) &&
                     (detection.id == tagNumber)) {
                 targetFound = true;
