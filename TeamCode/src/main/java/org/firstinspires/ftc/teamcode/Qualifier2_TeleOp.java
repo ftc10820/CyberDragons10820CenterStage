@@ -336,6 +336,7 @@ public class Qualifier2_TeleOp extends LinearOpMode {
         backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         //crane motor
+
         crane = hardwareMap.get(DcMotorEx.class, "Crane");
         crane.setDirection(DcMotorEx.Direction.REVERSE);
         crane.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
