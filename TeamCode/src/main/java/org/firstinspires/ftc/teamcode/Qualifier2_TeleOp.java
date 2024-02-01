@@ -493,6 +493,13 @@ public class Qualifier2_TeleOp extends LinearOpMode {
 
     }
 
+    void moveLeft(double speed) {
+        frontLeft.setPower(-speed);
+        frontRight.setPower(speed);
+        backLeft.setPower(speed);
+        backRight.setPower(-speed);
+    }
+
     // TODO: Refactor moveRight(time, speed) to RobotClass and update calls in this OpMode
     void moveRight(int time, double speed) throws InterruptedException {
         frontLeft.setPower(speed);
@@ -505,6 +512,13 @@ public class Qualifier2_TeleOp extends LinearOpMode {
         stopAllWheels();
     }
 
+
+    void moveRight(double speed)  {
+        frontLeft.setPower(speed);
+        frontRight.setPower(-speed);
+        backLeft.setPower(-speed);
+        backRight.setPower(speed);
+    }
 
     // TODO: Refactor turnRight(time, speed) to RobotClass and update calls in this OpMode
     void turnRight(int time, double speed) throws InterruptedException {
@@ -542,6 +556,15 @@ public class Qualifier2_TeleOp extends LinearOpMode {
 
     }
 
+    void stopAllWheelsNoInterrupt()  {
+
+        frontLeft.setPower(0);
+        frontRight.setPower(0);
+        backLeft.setPower(0);
+        backRight.setPower(0);
+
+    }
+
     void openLeftIntake() {
         intakeLeft.setPosition(0.9);
     }
@@ -559,7 +582,7 @@ public class Qualifier2_TeleOp extends LinearOpMode {
     }
 
     void lowerRamp() {
-        ramp.setPosition(0.55);
+        ramp.setPosition(0.58);
         // dont press too hard on mat, otherwise it lifts up the robot and the intake may not work properly
     }
 
@@ -647,16 +670,41 @@ public class Qualifier2_TeleOp extends LinearOpMode {
         // NOTE: timeout depends on the speed
         eTime1.reset();
         crane.setVelocity(vel);
-        while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (crane.getCurrentPosition() < craneMax)) {
-
+        while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (crane.getCurrentPosition() < craneMax) && (eTime1.milliseconds() < timeout_milli)) {
+                if (gamepad1.dpad_right) // note change
+                    moveLeft(0.3) ;
+                else {
+                    if(gamepad1.dpad_left) // note change
+                        moveRight(0.3) ;
+                    else
+                        stopAllWheelsNoInterrupt();
+                }
         }
         stopCrane();
         //sleep(500);
+        stopAllWheelsNoInterrupt();
+
 
         if (crane.getCurrentPosition() < 4000) {
+
             crane.setVelocity(vel*0.1);
-            sleep(slow_time);
+            int ttime = slow_time ;
+            // for the highest angle; increase time
+            if (craneAngle.getPosition() > 0.8)
+                ttime = ttime + 500;
+            eTime1.reset();
+            while(eTime1.milliseconds() < ttime) {
+                if (gamepad1.dpad_right) // note change
+                    moveLeft(0.3) ;
+                else {
+                    if(gamepad1.dpad_left)
+                        moveRight(0.3) ;
+                    else
+                        stopAllWheelsNoInterrupt();
+                }
+            }
             stopCrane();
+            stopAllWheelsNoInterrupt();
 
 /*
             crane.setTargetPosition(crane.getCurrentPosition() + (8 * 63)); // calculate 63 encoder ticks per cm
@@ -904,10 +952,10 @@ public class Qualifier2_TeleOp extends LinearOpMode {
         // sleep values in this function need to be modified
         lowerRamp();
         readyIntakePlatform();
-        sleep(100);
+        //sleep(100);
         closeRightIntake();
         closeLeftIntake();
-            sleep(1500);
+            sleep(1000);
         liftRamp();
         initIntakePlatform();
         openRightIntake();
