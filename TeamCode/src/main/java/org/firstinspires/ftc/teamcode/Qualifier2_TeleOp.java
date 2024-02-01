@@ -96,7 +96,7 @@ public class Qualifier2_TeleOp extends LinearOpMode {
 
     ElapsedTime eTeleOp = new ElapsedTime() ;
 
-    double speedFactor = 1.0 ;
+    double speedFactor = 0.75 ;
 
     int craneMax = 4500;
 
@@ -297,9 +297,9 @@ public class Qualifier2_TeleOp extends LinearOpMode {
         double rx = gamepad1.right_stick_x; // turn left (anti-clockwise) or right (clockwise)
 
         // cube inputs to reduce initial acceleration
-        y = Math.pow(y, 3);
-        x = Math.pow(x, 3);
-        rx = Math.pow(rx, 3);
+        //y = Math.pow(y, 3);
+        //x = Math.pow(x, 3);
+        //rx = Math.pow(rx, 3);
 
         double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
         frontLeftPower = (y + x + rx) / denominator;
@@ -330,12 +330,13 @@ public class Qualifier2_TeleOp extends LinearOpMode {
         frontLeft.setDirection(DcMotorEx.Direction.REVERSE);
         backLeft.setDirection(DcMotorEx.Direction.REVERSE);
 
-        frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        //frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        //frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        //backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        //backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         //crane motor
+
         crane = hardwareMap.get(DcMotorEx.class, "Crane");
         crane.setDirection(DcMotorEx.Direction.REVERSE);
         crane.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -651,6 +652,7 @@ public class Qualifier2_TeleOp extends LinearOpMode {
             crane.setPower(speed*0.2);
             sleep(slow_time);
             stopCrane();
+
 
 /*
             crane.setTargetPosition(crane.getCurrentPosition() + (8 * 63)); // calculate 63 encoder ticks per cm

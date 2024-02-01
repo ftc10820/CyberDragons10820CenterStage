@@ -11,12 +11,10 @@ import com.acmerobotics.roadrunner.trajectory.constraints.MinVelocityConstraint;
 import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryVelocityConstraint;
 import com.acmerobotics.roadrunner.trajectory.constraints.TranslationalVelocityConstraint;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
@@ -25,24 +23,23 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
-import org.firstinspires.ftc.robotcore.external.navigation.AngularVelocity;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.teamcode.drive.DriveConstants;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
-import java.util.List;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
 @Autonomous
 @Config
-@Disabled
-public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
+public class Qualifier2_BlueRight extends LinearOpMode {
 
     //private org.firstinspires.ftc.vision.apriltag.AprilTagDetection desiredTag = null;
 
@@ -139,6 +136,8 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
     public static double strafeDistance = 5.0;
     public static double turnDistance = 0;
 
+    public double slowerVelocity = 20.0;
+
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -165,7 +164,9 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 .build();
 
         Trajectory zone1_2 = drive.trajectoryBuilder(zone1_1.end())
-                .lineTo(new Vector2d(-58,32))
+                .lineTo(new Vector2d(-58,32),
+                        SampleMecanumDrive.getVelocityConstraint(slowerVelocity, DriveConstants.MAX_ANG_VEL,
+                                DriveConstants.TRACK_WIDTH), SampleMecanumDrive.getAccelerationConstraint(DriveConstants.MAX_ACCEL))
                 .build();
 
         Trajectory zone3_1 = drive.trajectoryBuilder(traj1.end())
@@ -173,7 +174,10 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                 .build();
 
         Trajectory zone3_2 = drive.trajectoryBuilder(zone3_1.end())
-                .lineTo(new Vector2d(-58,32))
+                .lineTo(new Vector2d(-58,32),
+                        SampleMecanumDrive.getVelocityConstraint(slowerVelocity, DriveConstants.MAX_ANG_VEL,
+                                DriveConstants.TRACK_WIDTH), SampleMecanumDrive.getAccelerationConstraint(DriveConstants.MAX_ACCEL))
+
                 .build();
 
         Trajectory backstage_1 = drive.trajectoryBuilder(zone3_2.end())
@@ -297,6 +301,7 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
                     .build();
 
             drive.followTrajectory(strafeAprilTag);
+
 
             positionCraneLow();
             extendCraneUseSensorVelocity(4000, 5000, 15, 2000); ;
@@ -552,6 +557,8 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
         crane.setVelocity(vel);
         while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (crane.getCurrentPosition() < craneMax)) {
 
+            telemetry.addData("distance" , distanceBucket.getDistance(DistanceUnit.CM));
+            telemetry.update();
         }
         stopCrane();
         //sleep(500);
@@ -749,8 +756,8 @@ public class Qualifier1_BlueRightAutonomous extends LinearOpMode {
         boolean xAligned = false;
         desiredTag = null;
 
-        List<org.firstinspires.ftc.vision.apriltag.AprilTagDetection> currentDetections = aprilTag.getDetections();
-        for (org.firstinspires.ftc.vision.apriltag.AprilTagDetection detection : currentDetections) {
+        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+        for (AprilTagDetection detection : currentDetections) {
             if ((detection.metadata != null) &&
                     (detection.id == tagNumber)) {
                 targetFound = true;
