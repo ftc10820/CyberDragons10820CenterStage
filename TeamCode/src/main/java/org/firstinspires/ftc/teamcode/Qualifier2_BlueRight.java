@@ -302,14 +302,22 @@ public class Qualifier2_BlueRight extends LinearOpMode {
 
             drive.followTrajectory(strafeAprilTag);
 
+            visionPortal.setProcessorEnabled(aprilTag, false);
 
-            positionCraneLow();
-            extendCraneUseSensorVelocity(4000, 5000, 15, 2000); ;
-            liftCraneSlightly(0.2);
-            sleep(50) ;
-            retractCraneHome(0.8, 1000);
-            positionCraneBase();
-            retractCraneHome(0.8, 2000);
+            if (desiredTag != null) {
+
+                positionCraneLow();
+                extendCraneUseSensor(1.0, 5000, 15, 2000) ;
+                //extendCraneUseSensorVelocity(4000, 5000, 15, 2000);
+                liftCraneSlightly(0.2);
+                sleep(1000);
+                retractCraneHome(0.8, 1000);
+                sleep(1000);
+                positionCraneBase();
+                retractCraneHome(0.8, 2000);
+
+
+            }
 
             // april tag logic
             // initAprilTag();
@@ -388,8 +396,8 @@ public class Qualifier2_BlueRight extends LinearOpMode {
         crane.setDirection(DcMotorEx.Direction.REVERSE);
         crane.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        crane.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        crane.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        //crane.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        //crane.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         //suspension motor
         suspension = hardwareMap.get(DcMotorEx.class, "Suspension");
@@ -889,7 +897,7 @@ public class Qualifier2_BlueRight extends LinearOpMode {
         telemetry.addData("strafeDistance: ", strafeDistance);
         telemetry.addData("turn angle: ", turnDistance);
         telemetry.update();
-        sleep(3000);
+        sleep(250);
 
     }
 

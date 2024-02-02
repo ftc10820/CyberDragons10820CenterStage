@@ -11,7 +11,6 @@ import com.acmerobotics.roadrunner.trajectory.constraints.MinVelocityConstraint;
 import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryVelocityConstraint;
 import com.acmerobotics.roadrunner.trajectory.constraints.TranslationalVelocityConstraint;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -37,17 +36,16 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
-@Config
 @Autonomous
-@Disabled
-public class AprilTagAuto extends LinearOpMode {
+@Config
+public class Qualifier2_RedRight extends LinearOpMode {
 
     //private org.firstinspires.ftc.vision.apriltag.AprilTagDetection desiredTag = null;
 
     public SampleMecanumDrive drive;
 
     // crane linear slide and lifter
-    public DcMotor crane;
+    public DcMotorEx crane;
     public Servo craneAngle;
 
     // suspension motor
@@ -79,33 +77,21 @@ public class AprilTagAuto extends LinearOpMode {
     public ColorSensor colorFieldLine;
 
     // Vision portal and vision processing pipelines
-    private TfodProcessor tfod;
+
     private AprilTagProcessor aprilTag;
+
+    private TfodProcessor tfod;
+
+    private VisionPortal myVisionPortal;
 
     private VisionPortal visionPortal;
 
-    //april tag ftc dash variables
+    int zone = 1;
 
-     int zone = 1;
-
-     public static int aprilTagZone = 1;
-
-    public static double currentBearing = 10.0;
-    public static double currentRange = 10.0;
-
-    public static double currentYaw = 10.0;
-
-    public static double desiredYaw = 10.0;
-
-    public static double strafeCorrection = 10.0;
-
-    public static double strafeDistance = 5.0;
-    public static double turnDistance = 0;
-
+    int craneMax = 4500;
 
 
     VisionSubsystem vision;
-
 
     // helper variables
     ElapsedTime eTime1 = new ElapsedTime() ;
@@ -129,51 +115,269 @@ public class AprilTagAuto extends LinearOpMode {
 
 
     private static final int DESIRED_TAG_ID = 2;     // Choose the tag you want to approach or set to -1 for ANY tag.
-    public static AprilTagDetection desiredTag = null;     // Used to hold the data for a detected AprilTag
+    private AprilTagDetection desiredTag = null;     // Used to hold the data for a detected AprilTag
 
-    public Trajectory strafeLeftAprilTag;
+    //april tag adjustment variables
 
-    public Trajectory strafeRightAprilTag;
+    public static int aprilTagZone;
+
+    public static double currentBearing = 10.0;
+    public static double currentRange = 10.0;
+
+    public static double currentYaw = 10.0;
+
+    public static double desiredYaw = 10.0;
+
+    public static double strafeAngleCorrection = 10.0;
+
+    public static double strafeDistanceCorrection = 6.0;
+
+    public static double strafeDistance = 5.0;
+    public static double turnDistance = 0;
+
+    public double slowerVelocity = 20.0;
 
 
     @Override
     public void runOpMode() throws InterruptedException {
 
         initialize();
+        initIntakePlatform();
+        closeRightIntake();
+
+        vision = new VisionSubsystem(hardwareMap);
+        vision.setAlliance("red");
+
         drive = new SampleMecanumDrive(hardwareMap);
 
-        Pose2d startPose = new Pose2d(0, 0, Math.toRadians(180));
-        drive.setPoseEstimate(startPose);//april tag paths
+        drive = new SampleMecanumDrive(hardwareMap);
 
+        //Starting the robot at the bottom left (blue auto)
+        Pose2d startPose = new Pose2d(12, -60, Math.toRadians(270));
+        drive.setPoseEstimate(startPose);
 
-        initAprilTag();
-        telemetryAprilTag();
-        telemetry.update();
+        Trajectory traj1 = drive.trajectoryBuilder(startPose)
+                .lineToLinearHeading(new Pose2d(30,-34, Math.toRadians(180)))
+                .build();
+
+        Trajectory zone1_1 = drive.trajectoryBuilder(traj1.end())
+                .back(16.0)
+                .build();
+
+        Trajectory zone1_2 = drive.trajectoryBuilder(zone1_1.end())
+                .lineTo(new Vector2d(-60,-32))
+                .build();
+
+        Trajectory zone3_1 = drive.trajectoryBuilder(traj1.end())
+                .forward(23.0)
+                .build();
+
+        Trajectory zone3_2 = drive.trajectoryBuilder(zone3_1.end())
+                .back(40)
+                .build();
+
+        Trajectory backstage_1 = drive.trajectoryBuilder(zone3_2.end())
+                .strafeRight(24.0)
+                .build();
+
+        Trajectory backstage_2 = drive.trajectoryBuilder(backstage_1.end())
+                .lineTo(new Vector2d(42, -10))
+                .build();
+
+        Trajectory zone2_traj1 = drive.trajectoryBuilder(startPose)
+                .back(44.0)
+                .build();
+
+        Trajectory zone2_traj2 = drive.trajectoryBuilder(zone2_traj1.end())
+                .back(12.0)
+                .build();
+
+        Trajectory zone2_traj3 = drive.trajectoryBuilder(zone2_traj2.end().plus(new Pose2d(0,0, Math.toRadians(-90))))
+                .back(32)
+                .build();
+
+        Trajectory zone2_traj4 = drive.trajectoryBuilder(zone2_traj3.end())
+                .strafeLeft(24.0)
+                .build();
+
+        Trajectory zone2_traj5 = drive.trajectoryBuilder(zone2_traj4.end())
+                .forward(6.0)
+                .build();
+
+        Trajectory backstage_3 = drive.trajectoryBuilder(backstage_2.end().plus(new Pose2d(0,0, Math.toRadians(180))))
+                .lineTo(new Vector2d(42, -40))
+                .build();
+
+        Trajectory adjustment = drive.trajectoryBuilder(backstage_3.end())
+                .forward(6.0)
+                .build();
+
+        Trajectory zone1_backdrop = drive.trajectoryBuilder(adjustment.end())
+                .strafeRight(6.0)
+                .build();
+
+        Trajectory zone3_backdrop = drive.trajectoryBuilder(adjustment.end())
+                .strafeLeft(6.0)
+                .build();
+
+        TrajectoryVelocityConstraint slowSpeed = new MinVelocityConstraint(Arrays.asList(new TranslationalVelocityConstraint(60), new AngularVelocityConstraint(1)));
+
+        Trajectory strafeLeft = drive.trajectoryBuilder(adjustment.end())
+                .strafeLeft(1)
+                .build();
+
+        Trajectory strafeRight = drive.trajectoryBuilder(adjustment.end())
+                .strafeRight(1)
+                .build();
+
+        while (!isStarted()) {
+            vision.elementDetection(telemetry);
+            vision.returnDistance(telemetry);
+
+            telemetry.update();
+
+        }
+
+        zone = vision.zone;
+        aprilTagZone = 3 + vision.zone;
 
         waitForStart();
+
+
         if (opModeIsActive()) {
 
-            if (aprilTagAdjustment() == -1) {
+            initAprilTag();
 
-                drive.turn(turnDistance);
+            if (zone == 3) {
 
-                strafeRightAprilTag = drive.trajectoryBuilder(startPose.plus(new Pose2d(0,0, Math.toRadians(turnDistance))))
-                        .strafeRight(Math.abs(strafeDistance))
-                        .build();
+                drive.followTrajectory(traj1);
+                openRightIntake();
+                drive.followTrajectory(zone1_1);
 
-                drive.followTrajectory(strafeRightAprilTag);
+            } else if (zone == 2) {
 
-            } else if (aprilTagAdjustment() == 1) {
+                drive.followTrajectory(zone2_traj1);
+                openRightIntake();
+                drive.followTrajectory(zone2_traj2);
+                drive.turn(Math.toRadians(-90));
+                drive.followTrajectory(zone2_traj3);
+                drive.followTrajectory(zone2_traj4);
 
-                drive.turn(turnDistance);
+            } else {
 
-                strafeLeftAprilTag = drive.trajectoryBuilder(startPose.plus(new Pose2d(0,0, Math.toRadians(turnDistance))))
-                        .strafeLeft(Math.abs(strafeDistance))
-                        .build();
-
-                drive.followTrajectory(strafeLeftAprilTag);
+                drive.followTrajectory(traj1);
+                drive.followTrajectory(zone3_1);
+                openRightIntake();
+                drive.followTrajectory(zone3_2);
 
             }
+
+            Pose2d aprilTagStartPose = new Pose2d(0, 0, Math.toRadians(180));
+            drive.setPoseEstimate(aprilTagStartPose);//april tag paths
+
+            telemetryAprilTag();
+            telemetry.update();
+
+            aprilTagAdjustment();
+
+            //april tag alignment
+            drive.turn(turnDistance);
+
+            Trajectory strafeAprilTag = drive.trajectoryBuilder(aprilTagStartPose.plus(new Pose2d(0,0, Math.toRadians(turnDistance))))
+                    .strafeRight(strafeDistance)
+                    .build();
+
+            drive.followTrajectory(strafeAprilTag);
+
+            visionPortal.setProcessorEnabled(aprilTag, false);
+
+            if (desiredTag != null) {
+
+                positionCraneLow();
+                extendCraneUseSensor(0.8, 5000, 15, 2000) ;
+                //extendCraneUseSensorVelocity(4000, 5000, 15, 2000);
+                liftCraneSlightly(0.2);
+                sleep(1000);
+                retractCraneHome(0.8, 1000);
+                sleep(1000);
+                positionCraneBase();
+                retractCraneHome(0.8, 2000);
+
+
+            }
+
+            Trajectory park = drive.trajectoryBuilder(strafeAprilTag.end())
+                    .strafeLeft(28.0 - (6 * (aprilTagZone - 4)))
+                    .build();
+
+            drive.followTrajectory(park);
+
+
+            // april tag logic
+            // initAprilTag();
+            //double oldDistance = distanceBucket.getDistance(DistanceUnit.INCH);
+            /*while(distanceBucket.getDistance(DistanceUnit.INCH) >= oldDistance*.8) {
+                drive.moveLeft(50, .5);
+                telemetry.addData("distance", distanceBucket.getDistance(DistanceUnit.INCH));
+                telemetry.update();
+            }*/
+            /*drive.moveLeft(.5);
+            while(getDistanceToAprilTag(zone) == 0){
+
+            }
+            drive.stopAllWheels();
+            oldDistance = distanceBucket.getDistance(DistanceUnit.INCH);
+            do{
+                telemetry.addData("Value: ", getDistanceToAprilTag(zone));
+                telemetry.update();
+                if(getDistanceToAprilTag(zone) != 0) {
+                    if (getDistanceToAprilTag(zone) > 4) {
+                        drive.stopAllWheels();
+                        telemetry.addLine("1");
+                        telemetry.update();
+                        drive.moveLeft(.5);
+                    } else if (getDistanceToAprilTag(zone) < 3) {
+                        drive.stopAllWheels();
+                        telemetry.addLine("2");
+                        telemetry.update();
+                        drive.moveRight(.5);
+                    } else if (getDistanceToAprilTag(zone) == 0) {
+
+                    }
+                    else {
+                        telemetry.addLine("3");
+                        telemetry.update();
+                        break;
+                    }
+                }
+            }while (getDistanceToAprilTag(zone) > 4 || getDistanceToAprilTag(zone) < 3 || getDistanceToAprilTag(zone) == 0 || distanceBucket.getDistance(DistanceUnit.INCH) > oldDistance*1.2);
+            */
+
+
+
+            // testing placing a pixel at high level
+            /*
+            positionCraneLow();
+            extendCraneUseSensor(0.8,10000, 12.5, 1500);
+            sleep(250);
+            positionCraneMedium();
+            sleep(250);
+            retractCraneHome(0.8, 2500);
+            sleep(250);
+            */
+
+
+            /*
+            positionCraneBase();
+            sleep(250);
+            retractCraneHome(0.8, 10000);
+            sleep(250);
+
+
+             */
+
+
+
 
         }
 
@@ -185,6 +389,9 @@ public class AprilTagAuto extends LinearOpMode {
         crane = hardwareMap.get(DcMotorEx.class, "Crane");
         crane.setDirection(DcMotorEx.Direction.REVERSE);
         crane.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        //crane.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        //crane.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         //suspension motor
         suspension = hardwareMap.get(DcMotorEx.class, "Suspension");
@@ -223,11 +430,11 @@ public class AprilTagAuto extends LinearOpMode {
     }
 
     void openRightIntake() {
-        intakeRight.setPosition(0.32);
+        intakeRight.setPosition(0);
     }
 
     void closeRightIntake() {
-        intakeRight.setPosition(0.6);
+        intakeRight.setPosition(1.0);
     }
 
     void initAutonomous() {
@@ -344,6 +551,37 @@ public class AprilTagAuto extends LinearOpMode {
         sleep(slow_time) ;
         stopCrane();
     }
+
+    void extendCraneUseSensorVelocity(double vel, int timeout_milli, double backdrop_dist_cm, int slow_time) {
+        // extend crane till given timeout value or till the sensor detects proximity to backdrop based on given distance
+        // NOTE: timeout depends on the speed
+        eTime1.reset();
+        crane.setVelocity(vel);
+        while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (crane.getCurrentPosition() < craneMax)) {
+
+            telemetry.addData("distance" , distanceBucket.getDistance(DistanceUnit.CM));
+            telemetry.update();
+        }
+        stopCrane();
+        //sleep(500);
+
+        if (crane.getCurrentPosition() < 4000) {
+            crane.setVelocity(vel*0.1);
+            sleep(slow_time);
+            stopCrane();
+
+/*
+            crane.setTargetPosition(crane.getCurrentPosition() + (8 * 63)); // calculate 63 encoder ticks per cm
+            crane.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            crane.setPower(speed*0.2);
+
+ */
+
+        }
+
+    }
+
+
     void retractCrane(double speed) {
         crane.setPower(-1.0*speed);
     }
@@ -599,10 +837,11 @@ public class AprilTagAuto extends LinearOpMode {
         return false;
     }
 
+    void liftCraneSlightly(double incr) {
+        craneAngle.setPosition(craneAngle.getPosition() + incr);
+    }
 
-    int aprilTagAdjustment() {
-
-        int direction = 0;
+    void aprilTagAdjustment() {
 
         List<AprilTagDetection> currentDetections = aprilTag.getDetections();
         for (AprilTagDetection detection : currentDetections) {
@@ -618,7 +857,7 @@ public class AprilTagAuto extends LinearOpMode {
 
         if (desiredTag == null) {
 
-            return 0;
+            return;
         }
 
         currentBearing = desiredTag.ftcPose.bearing;
@@ -634,32 +873,25 @@ public class AprilTagAuto extends LinearOpMode {
 
         //TODO: i think the strafe correction should be added after the trig calculation
         //TODO: you may want to add telemetry here too to see what value are going into the calculation and the result
-        strafeDistance = currentRange * (Math.sin((Math.toRadians(currentBearing + strafeCorrection))));
+        strafeDistance = currentRange * (Math.sin((Math.toRadians(currentBearing + strafeAngleCorrection))));
         turnDistance = Math.toRadians(-1 * (desiredYaw - currentYaw));
 
 
-
+/* TODO: Coach Weston: adjustment should still be 6 but we need to make sure it's
+         aprilTagZone - desiredTag.id or is it desiredTag.id - aprilTagZone?
+*/
         // correction if detected tag isnt desired zone
-        strafeDistance += 8.0 * (aprilTagZone - desiredTag.id);
+        strafeDistance += strafeDistanceCorrection * (desiredTag.id - aprilTagZone);
+/*
+ TODO: Coach Weston: We may want to subtract a final 2-4 inches since we want the camera
+       about 2 inches to the left of the bucket.
+*/
 
+        telemetry.addData("correction: ", desiredTag.id - aprilTagZone);
         telemetry.addData("strafeDistance: ", strafeDistance);
         telemetry.addData("turn angle: ", turnDistance);
         telemetry.update();
-
-        //strafing
-        if (strafeDistance > 0) {
-
-            // move left (right since backwards)
-            direction =  1;
-
-        } else if (strafeDistance < 0) {
-
-            // move right (left since backwards)
-            direction = -1;
-
-        }
-
-        return direction;
+        sleep(250);
 
     }
 
@@ -687,4 +919,5 @@ public class AprilTagAuto extends LinearOpMode {
         telemetry.addLine("RBE = Range, Bearing & Elevation");
 
     }
+
 }

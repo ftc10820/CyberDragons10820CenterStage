@@ -96,7 +96,7 @@ public class Qualifier2_TeleOp extends LinearOpMode {
 
     ElapsedTime eTeleOp = new ElapsedTime() ;
 
-    double speedFactor = 0.75 ;
+    double speedFactor = 0.75;
 
     int craneMax = 4500;
 
@@ -297,9 +297,9 @@ public class Qualifier2_TeleOp extends LinearOpMode {
         double rx = gamepad1.right_stick_x; // turn left (anti-clockwise) or right (clockwise)
 
         // cube inputs to reduce initial acceleration
-        //y = Math.pow(y, 3);
-        //x = Math.pow(x, 3);
-        //rx = Math.pow(rx, 3);
+        y = Math.pow(y, 3);
+        x = Math.pow(x, 3);
+        rx = Math.pow(rx, 3);
 
         double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
         frontLeftPower = (y + x + rx) / denominator;
@@ -324,16 +324,16 @@ public class Qualifier2_TeleOp extends LinearOpMode {
         backRight = hardwareMap.get(DcMotorEx.class, "BackRight");
         backLeft = hardwareMap.get(DcMotorEx.class, "BackLeft");
 
-        // this ensures that all wheels go forward when applying postive power
+        // this ensures that all wheels go forward when applying positive power
         frontRight.setDirection(DcMotorEx.Direction.FORWARD);
         backRight.setDirection(DcMotorEx.Direction.FORWARD);
         frontLeft.setDirection(DcMotorEx.Direction.REVERSE);
         backLeft.setDirection(DcMotorEx.Direction.REVERSE);
 
-        //frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        //frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        //backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        //backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         //crane motor
 
