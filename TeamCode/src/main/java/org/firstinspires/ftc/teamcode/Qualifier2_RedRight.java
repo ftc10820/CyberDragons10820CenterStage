@@ -94,8 +94,8 @@ public class Qualifier2_RedRight extends LinearOpMode {
     VisionSubsystem vision;
 
     // helper variables
-    ElapsedTime eTime1 = new ElapsedTime() ;
-    ElapsedTime eTime2 = new ElapsedTime() ;
+    ElapsedTime eTime1 = new ElapsedTime();
+    ElapsedTime eTime2 = new ElapsedTime();
 
     // variables specific to AprilTags
     final double DESIRED_DISTANCE = 12.0; //  this is how close the camera should get to the target (inches)
@@ -103,15 +103,15 @@ public class Qualifier2_RedRight extends LinearOpMode {
     //  Set the GAIN constants to control the relationship between the measured position error, and how much power is
     //  applied to the drive motors to correct the error.
     //  Drive = Error * Gain    Make these values smaller for smoother control, or larger for a more aggressive response.
-    final double SPEED_GAIN  =  0.1  ;   //  Forward Speed Control "Gain". eg: Ramp up to 50% power at a 25 inch error.   (0.50 / 25.0)
-    final double STRAFE_GAIN =  0.015 ;   //  Strafe Speed Control "Gain".  eg: Ramp up to 25% power at a 25 degree Yaw error.   (0.25 / 25.0)
-    final double TURN_GAIN   =  0.01  ;   //  Turn Control "Gain".  eg: Ramp up to 25% power at a 25 degree error. (0.25 / 25.0)
+    final double SPEED_GAIN = 0.1;   //  Forward Speed Control "Gain". eg: Ramp up to 50% power at a 25 inch error.   (0.50 / 25.0)
+    final double STRAFE_GAIN = 0.015;   //  Strafe Speed Control "Gain".  eg: Ramp up to 25% power at a 25 degree Yaw error.   (0.25 / 25.0)
+    final double TURN_GAIN = 0.01;   //  Turn Control "Gain".  eg: Ramp up to 25% power at a 25 degree error. (0.25 / 25.0)
     final double TFOD_Y_GAIN = 0.004;    // Forward Speed Control "Gain" for pixel intake.
     final double TFOD_X_GAIN = 0.002;    // Strafe Speed Control "Gain" for pixel intake.
     final double MAX_AUTO_SPEED = 0.8;   //  Clip the approach speed to this max value (adjust for your robot)
 
-    final double MAX_AUTO_STRAFE= 0.6;   //  Clip the approach speed to this max value (adjust for your robot)
-    final double MAX_AUTO_TURN  = 0.1;   //  Clip the turn speed to this max value (adjust for your robot)
+    final double MAX_AUTO_STRAFE = 0.6;   //  Clip the approach speed to this max value (adjust for your robot)
+    final double MAX_AUTO_TURN = 0.1;   //  Clip the turn speed to this max value (adjust for your robot)
 
 
     private static final int DESIRED_TAG_ID = 2;     // Choose the tag you want to approach or set to -1 for ANY tag.
@@ -157,7 +157,7 @@ public class Qualifier2_RedRight extends LinearOpMode {
         drive.setPoseEstimate(startPose);
 
         Trajectory traj1 = drive.trajectoryBuilder(startPose)
-                .lineToLinearHeading(new Pose2d(30,-34, Math.toRadians(180)))
+                .lineToLinearHeading(new Pose2d(30, -34, Math.toRadians(180)))
                 .build();
 
         Trajectory zone1_1 = drive.trajectoryBuilder(traj1.end())
@@ -165,7 +165,7 @@ public class Qualifier2_RedRight extends LinearOpMode {
                 .build();
 
         Trajectory zone1_2 = drive.trajectoryBuilder(zone1_1.end())
-                .lineTo(new Vector2d(-60,-32))
+                .lineTo(new Vector2d(-60, -32))
                 .build();
 
         Trajectory zone3_1 = drive.trajectoryBuilder(traj1.end())
@@ -192,7 +192,7 @@ public class Qualifier2_RedRight extends LinearOpMode {
                 .back(12.0)
                 .build();
 
-        Trajectory zone2_traj3 = drive.trajectoryBuilder(zone2_traj2.end().plus(new Pose2d(0,0, Math.toRadians(-90))))
+        Trajectory zone2_traj3 = drive.trajectoryBuilder(zone2_traj2.end().plus(new Pose2d(0, 0, Math.toRadians(-90))))
                 .back(32)
                 .build();
 
@@ -204,7 +204,7 @@ public class Qualifier2_RedRight extends LinearOpMode {
                 .forward(6.0)
                 .build();
 
-        Trajectory backstage_3 = drive.trajectoryBuilder(backstage_2.end().plus(new Pose2d(0,0, Math.toRadians(180))))
+        Trajectory backstage_3 = drive.trajectoryBuilder(backstage_2.end().plus(new Pose2d(0, 0, Math.toRadians(180))))
                 .lineTo(new Vector2d(42, -40))
                 .build();
 
@@ -283,7 +283,7 @@ public class Qualifier2_RedRight extends LinearOpMode {
             //april tag alignment
             drive.turn(turnDistance);
 
-            Trajectory strafeAprilTag = drive.trajectoryBuilder(aprilTagStartPose.plus(new Pose2d(0,0, Math.toRadians(turnDistance))))
+            Trajectory strafeAprilTag = drive.trajectoryBuilder(aprilTagStartPose.plus(new Pose2d(0, 0, Math.toRadians(turnDistance))))
                     .strafeRight(strafeDistance)
                     .build();
 
@@ -294,14 +294,20 @@ public class Qualifier2_RedRight extends LinearOpMode {
             if (desiredTag != null) {
 
                 positionCraneLow();
-                extendCraneUseSensor(0.8, 5000, 15, 2000) ;
+                sleep(2500) ;
+                extendCraneUseSensorVelocity(4000, 5000, 15, 2000);
                 //extendCraneUseSensorVelocity(4000, 5000, 15, 2000);
+
                 liftCraneSlightly(0.2);
-                sleep(1000);
-                retractCraneHome(0.8, 1000);
-                sleep(1000);
+                sleep(2000);
+                retractCraneVelocity(3000);
+                sleep(1500);
+                stopCraneVelocity();
+                /*
                 positionCraneBase();
-                retractCraneHome(0.8, 2000);
+                retractCraneHomeVelocity(3000, 2000);
+
+                 */
 
 
             }
@@ -354,7 +360,6 @@ public class Qualifier2_RedRight extends LinearOpMode {
             */
 
 
-
             // testing placing a pixel at high level
             /*
             positionCraneLow();
@@ -377,8 +382,6 @@ public class Qualifier2_RedRight extends LinearOpMode {
              */
 
 
-
-
         }
 
     }
@@ -390,8 +393,8 @@ public class Qualifier2_RedRight extends LinearOpMode {
         crane.setDirection(DcMotorEx.Direction.REVERSE);
         crane.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        //crane.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        //crane.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        crane.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        crane.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         //suspension motor
         suspension = hardwareMap.get(DcMotorEx.class, "Suspension");
@@ -415,8 +418,6 @@ public class Qualifier2_RedRight extends LinearOpMode {
         pixelDetectorRight = hardwareMap.get(ColorSensor.class, "PixelDetectorRight");
 
         distanceBucket = hardwareMap.get(DistanceSensor.class, "DistanceBucket");
-
-
 
 
     }
@@ -462,7 +463,7 @@ public class Qualifier2_RedRight extends LinearOpMode {
                 //.setIsModelTensorFlow2(true)
                 //.setIsModelQuantized(true)
                 //.setModelInputSize(300)
-                .setModelAspectRatio(4.0 /3.0)
+                .setModelAspectRatio(4.0 / 3.0)
 
                 .build();
 
@@ -475,7 +476,7 @@ public class Qualifier2_RedRight extends LinearOpMode {
         builder.setCameraResolution(new Size(640, 480));
 
         //Enable the RC preview (LiveView).  Set "false" to omit camera monitoring.
-        builder.enableLiveView(true) ;
+        builder.enableLiveView(true);
 
         //Set the stream format; MJPEG uses less bandwidth than default YUY2.
         //builder.setStreamFormat(VisionPortal.StreamFormat.YUY2);
@@ -526,29 +527,36 @@ public class Qualifier2_RedRight extends LinearOpMode {
     void extendCrane(double speed) {
         crane.setPower(speed);
     }
+
     // see overloaded function ; use appropriately
+    void extendCraneVelocity(double vel) {
+        crane.setVelocity(vel);
+    }
+
     void extendCraneUseSensor(double speed) {
         // extend crane till a timeout value or till the sensor detects closeness to backdrop
-        final int EXTEND_TIMEOUT = 2000 ; // timeout depends on the speed
-        final double BACKDROP_DIST_IN_CM = 8.0 ;
+        final int EXTEND_TIMEOUT = 2000; // timeout depends on the speed
+        final double BACKDROP_DIST_IN_CM = 8.0;
         eTime1.reset();
         crane.setPower(speed);
-        while((distanceBucket.getDistance(DistanceUnit.CM) > BACKDROP_DIST_IN_CM) && (eTime1.milliseconds() < EXTEND_TIMEOUT)) {
+        while ((distanceBucket.getDistance(DistanceUnit.CM) > BACKDROP_DIST_IN_CM) && (eTime1.milliseconds() < EXTEND_TIMEOUT)) {
 
         }
         stopCrane();
+
     }
+
     void extendCraneUseSensor(double speed, int timeout_milli, double backdrop_dist_cm, int slow_time) {
         // extend crane till given timeout value or till the sensor detects proximity to backdrop based on given distance
         // NOTE: timeout depends on the speed
         eTime1.reset();
         crane.setPower(speed);
-        while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (eTime1.milliseconds() < timeout_milli)) {
+        while ((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (eTime1.milliseconds() < timeout_milli)) {
 
         }
         stopCrane();
         crane.setPower(0.2);
-        sleep(slow_time) ;
+        sleep(slow_time);
         stopCrane();
     }
 
@@ -557,27 +565,18 @@ public class Qualifier2_RedRight extends LinearOpMode {
         // NOTE: timeout depends on the speed
         eTime1.reset();
         crane.setVelocity(vel);
-        while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (crane.getCurrentPosition() < craneMax)) {
-
-            telemetry.addData("distance" , distanceBucket.getDistance(DistanceUnit.CM));
-            telemetry.update();
+        while ((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (eTime1.milliseconds() < timeout_milli)) {
         }
-        stopCrane();
-        //sleep(500);
+        stopCraneVelocity();
 
-        if (crane.getCurrentPosition() < 4000) {
-            crane.setVelocity(vel*0.1);
-            sleep(slow_time);
-            stopCrane();
 
-/*
-            crane.setTargetPosition(crane.getCurrentPosition() + (8 * 63)); // calculate 63 encoder ticks per cm
-            crane.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            crane.setPower(speed*0.2);
-
- */
-
-        }
+        crane.setVelocity(vel * 0.1);
+        int ttime = slow_time;
+        // for the highest angle; increase time
+        if (craneAngle.getPosition() > 0.8)
+            ttime = ttime + 500;
+        sleep(ttime) ;
+        stopCraneVelocity();
 
     }
 
@@ -585,9 +584,16 @@ public class Qualifier2_RedRight extends LinearOpMode {
     void retractCrane(double speed) {
         crane.setPower(-1.0*speed);
     }
+    void retractCraneVelocity(double vel) {
+        crane.setVelocity(-1.0*vel);
+    }
 
     void stopCrane() {
         crane.setPower(0.0);
+    }
+
+    void stopCraneVelocity() {
+        crane.setVelocity(0.0);
     }
 
     // see overloaded function ; use appropriately
@@ -611,6 +617,15 @@ public class Qualifier2_RedRight extends LinearOpMode {
 
         }
         stopCrane();
+    }
+    void retractCraneHomeVelocity(double vel, int timeout_milli) {
+        // retract crane till it hits sensor or given timeout val
+        eTime1.reset();
+        retractCraneVelocity(vel);
+        while((!touchCrane.isPressed()) && (eTime1.milliseconds() < timeout_milli)) {
+
+        }
+        stopCraneVelocity();
     }
     void positionCraneLow() {
         craneAngle.setPosition(0.53);

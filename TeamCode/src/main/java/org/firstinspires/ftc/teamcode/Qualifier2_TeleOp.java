@@ -150,6 +150,8 @@ public class Qualifier2_TeleOp extends LinearOpMode {
             curCranePos = craneAngle.getPosition() ;
 
             // enabled tfod dection is left bumper is pressed
+            // disabling streaming all together for Qual 2
+            /*
             if ((streamingEnabled == false) && (gamepad1.left_bumper)) {
                 // use this to turn on to enable processor
                 visionPortal.setProcessorEnabled(tfod, true);
@@ -161,6 +163,8 @@ public class Qualifier2_TeleOp extends LinearOpMode {
                 visionPortal.setProcessorEnabled(tfod, false);
                 streamingEnabled = false ;
             }
+
+             */
 
             // process the tfod detections if left trigger is pressed and see if any targets are found
             targetFound = false ;
@@ -227,6 +231,7 @@ public class Qualifier2_TeleOp extends LinearOpMode {
             extendCraneVelocity(cranePower*4000);
 
             // logic for manual lifting of crane
+            /*
             if (gamepad2.dpad_left) {
                 if (craneUpFlag == false) {
                     craneDownFlag = false ;
@@ -262,6 +267,7 @@ public class Qualifier2_TeleOp extends LinearOpMode {
                     }
                 }
             }
+             */
 
             // only for end game
             if(eTeleOp.milliseconds() > 90000) {
@@ -681,6 +687,13 @@ public class Qualifier2_TeleOp extends LinearOpMode {
                     else
                         stopAllWheelsNoInterrupt();
                 }
+                /*
+                if (gamepad2.y)
+                    liftCraneSlightly(0.05);
+                if (gamepad2.a)
+                    liftCraneSlightly(-0.05);
+
+                 */
         }
         stopCrane();
         //sleep(500);
@@ -704,6 +717,12 @@ public class Qualifier2_TeleOp extends LinearOpMode {
                     else
                         stopAllWheelsNoInterrupt();
                 }
+                /*
+                if (gamepad2.y)
+                    liftCraneSlightly(0.05);
+                if (gamepad2.a)
+                    liftCraneSlightly(-0.05);
+                 */
             }
             stopCrane();
             stopAllWheelsNoInterrupt();

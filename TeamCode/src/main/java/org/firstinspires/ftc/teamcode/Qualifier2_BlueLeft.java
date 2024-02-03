@@ -294,14 +294,20 @@ public class Qualifier2_BlueLeft extends LinearOpMode {
             if (desiredTag != null) {
 
                 positionCraneLow();
-                extendCraneUseSensor(0.8, 5000, 15, 2000) ;
+                sleep(2500) ;
+                extendCraneUseSensorVelocity(4000, 5000, 15, 2000);
                 //extendCraneUseSensorVelocity(4000, 5000, 15, 2000);
+
                 liftCraneSlightly(0.2);
-                sleep(1000);
-                retractCraneHome(0.8, 1000);
-                sleep(1000);
+                sleep(2000);
+                retractCraneVelocity(3000);
+                sleep(1500);
+                stopCraneVelocity();
+                /*
                 positionCraneBase();
-                retractCraneHome(0.8, 2000);
+                retractCraneHomeVelocity(3000, 2000);
+
+                 */
 
 
             }
@@ -391,8 +397,8 @@ public class Qualifier2_BlueLeft extends LinearOpMode {
         crane.setDirection(DcMotorEx.Direction.REVERSE);
         crane.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        //crane.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        //crane.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        crane.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        crane.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         //suspension motor
         suspension = hardwareMap.get(DcMotorEx.class, "Suspension");
@@ -558,27 +564,18 @@ public class Qualifier2_BlueLeft extends LinearOpMode {
         // NOTE: timeout depends on the speed
         eTime1.reset();
         crane.setVelocity(vel);
-        while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (crane.getCurrentPosition() < craneMax)) {
-
-            telemetry.addData("distance" , distanceBucket.getDistance(DistanceUnit.CM));
-            telemetry.update();
+        while ((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (eTime1.milliseconds() < timeout_milli)) {
         }
-        stopCrane();
-        //sleep(500);
+        stopCraneVelocity();
 
-        if (crane.getCurrentPosition() < 4000) {
-            crane.setVelocity(vel*0.1);
-            sleep(slow_time);
-            stopCrane();
 
-/*
-            crane.setTargetPosition(crane.getCurrentPosition() + (8 * 63)); // calculate 63 encoder ticks per cm
-            crane.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            crane.setPower(speed*0.2);
-
- */
-
-        }
+        crane.setVelocity(vel * 0.1);
+        int ttime = slow_time;
+        // for the highest angle; increase time
+        if (craneAngle.getPosition() > 0.8)
+            ttime = ttime + 500;
+        sleep(ttime) ;
+        stopCraneVelocity();
 
     }
 
@@ -586,9 +583,16 @@ public class Qualifier2_BlueLeft extends LinearOpMode {
     void retractCrane(double speed) {
         crane.setPower(-1.0*speed);
     }
+    void retractCraneVelocity(double vel) {
+        crane.setVelocity(-1.0*vel);
+    }
 
     void stopCrane() {
         crane.setPower(0.0);
+    }
+
+    void stopCraneVelocity() {
+        crane.setVelocity(0.0);
     }
 
     // see overloaded function ; use appropriately
@@ -612,6 +616,15 @@ public class Qualifier2_BlueLeft extends LinearOpMode {
 
         }
         stopCrane();
+    }
+    void retractCraneHomeVelocity(double vel, int timeout_milli) {
+        // retract crane till it hits sensor or given timeout val
+        eTime1.reset();
+        retractCraneVelocity(vel);
+        while((!touchCrane.isPressed()) && (eTime1.milliseconds() < timeout_milli)) {
+
+        }
+        stopCraneVelocity();
     }
     void positionCraneLow() {
         craneAngle.setPosition(0.53);
