@@ -304,15 +304,15 @@ public class Qualifier2_RedLeft extends LinearOpMode {
 
             if (desiredTag != null) {
 
-                positionCraneLow();
-                sleep(2500) ;
+                positionCraneMedium();
+                sleep(2000) ;
                 extendCraneUseSensorVelocity(4000, 5000, 15, 2000);
                 //extendCraneUseSensorVelocity(4000, 5000, 15, 2000);
 
                 liftCraneSlightly(0.2);
-                sleep(2000);
+                sleep(500);
                 retractCraneVelocity(3000);
-                sleep(1500);
+                sleep(500);
                 stopCraneVelocity();
                 /*
                 positionCraneBase();

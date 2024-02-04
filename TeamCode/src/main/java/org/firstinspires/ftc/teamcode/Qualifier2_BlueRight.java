@@ -181,7 +181,8 @@ public class Qualifier2_BlueRight extends LinearOpMode {
                 .build();
 
         Trajectory backstage_1 = drive.trajectoryBuilder(zone3_2.end())
-                .strafeRight(24.0)
+                .strafeRight(28.0, SampleMecanumDrive.getVelocityConstraint(slowerVelocity, DriveConstants.MAX_ANG_VEL,
+                        DriveConstants.TRACK_WIDTH), SampleMecanumDrive.getAccelerationConstraint(DriveConstants.MAX_ACCEL))
                 .build();
 
         Trajectory backstage_2 = drive.trajectoryBuilder(backstage_1.end())
@@ -209,7 +210,7 @@ public class Qualifier2_BlueRight extends LinearOpMode {
                 .build();
 
         Trajectory backstage_3 = drive.trajectoryBuilder(backstage_2.end().plus(new Pose2d(0,0, Math.toRadians(180))))
-                .lineTo(new Vector2d(42, 34))
+                .lineTo(new Vector2d(42, 28))
                 .build();
 
         Trajectory adjustment = drive.trajectoryBuilder(backstage_3.end())
