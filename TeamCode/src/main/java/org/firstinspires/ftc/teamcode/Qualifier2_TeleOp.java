@@ -182,7 +182,7 @@ public class Qualifier2_TeleOp extends LinearOpMode {
             else {
                 // if trigger is not continuously pressed, then use normal left stick and right stick controls
                 // for the drive train
-                processStickControls() ;
+                driveMethod();
             }
 
             // FINALLY run the drive motors
@@ -318,6 +318,36 @@ public class Qualifier2_TeleOp extends LinearOpMode {
         backLeftPower *= speedFactor;
         frontRightPower *= speedFactor;
         backRightPower *= speedFactor;
+    }
+
+    void driveMethod() {
+
+        double x = gamepad1.left_stick_x;
+        double y = -gamepad1.left_stick_y;
+        double turn = gamepad1.right_stick_x;
+
+        double theta = Math.atan2(y, x);
+        double power = Math.hypot(x, y);
+
+        double sin = Math.sin(theta - Math.PI/4);
+        double cos = Math.cos(theta - Math.PI/4);
+        double max = Math.max(Math.abs(sin),Math.abs(cos));
+
+        frontLeftPower   = power * cos/max + turn;
+        frontRightPower  = power * sin/max - turn;
+        backLeftPower    = power * sin/max + turn;
+        backRightPower   = power * cos/max - turn;
+
+        if ((power + Math.abs(turn)) > 1) {
+
+            frontLeftPower   /= power + Math.abs(turn);
+            frontRightPower  /= power + Math.abs(turn);
+            backLeftPower    /= power + Math.abs(turn);
+            backRightPower   /= power + Math.abs(turn);
+
+        }
+
+
     }
 
     // TODO: Refactor initialize() to RobotClass. OpMode.initialize() should be robot = new RobotClass(); robot.initialize();
