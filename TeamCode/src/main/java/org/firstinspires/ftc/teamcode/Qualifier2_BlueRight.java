@@ -569,7 +569,7 @@ public class Qualifier2_BlueRight extends LinearOpMode {
         // NOTE: timeout depends on the speed
         eTime1.reset();
         crane.setVelocity(vel);
-        while ((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (eTime1.milliseconds() < timeout_milli)) {
+        while ((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (crane.getCurrentPosition() < craneMax) && (eTime1.milliseconds() < timeout_milli)) {
         }
         stopCraneVelocity();
 

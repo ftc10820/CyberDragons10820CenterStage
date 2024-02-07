@@ -678,6 +678,8 @@ public class Qualifier2_TeleOp extends LinearOpMode {
         // NOTE: timeout depends on the speed
         eTime1.reset();
         crane.setVelocity(vel);
+        boolean yPressed = false;
+        boolean aPressed = false;
         while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (crane.getCurrentPosition() < craneMax) && (eTime1.milliseconds() < timeout_milli)) {
                 if (gamepad1.dpad_right) // note change
                     moveLeft(0.3) ;
@@ -687,18 +689,33 @@ public class Qualifier2_TeleOp extends LinearOpMode {
                     else
                         stopAllWheelsNoInterrupt();
                 }
-                /*
-                if (gamepad2.y)
-                    liftCraneSlightly(0.05);
-                if (gamepad2.a)
-                    liftCraneSlightly(-0.05);
 
-                 */
+                if (gamepad2.y) {
+                    aPressed = false ;
+                    if (yPressed == false)  {
+                        yPressed = true;
+                        liftCraneSlightly(0.05);
+                    }
+                }
+                if (gamepad2.a) {
+                    yPressed = false ;
+                    if (aPressed == false)  {
+                        aPressed = true;
+                        liftCraneSlightly(-0.05);
+                    }
+                }
+                if (!(gamepad2.y || gamepad2.a)) {
+                    yPressed = false ;
+                    aPressed = false ;
+                }
+
         }
         stopCrane();
         //sleep(500);
         stopAllWheelsNoInterrupt();
 
+        yPressed = false;
+        aPressed = false;
 
         if (crane.getCurrentPosition() < 4000) {
 
@@ -717,12 +734,25 @@ public class Qualifier2_TeleOp extends LinearOpMode {
                     else
                         stopAllWheelsNoInterrupt();
                 }
-                /*
-                if (gamepad2.y)
-                    liftCraneSlightly(0.05);
-                if (gamepad2.a)
-                    liftCraneSlightly(-0.05);
-                 */
+
+                if (gamepad2.y) {
+                    aPressed = false ;
+                    if (yPressed == false)  {
+                        yPressed = true;
+                        liftCraneSlightly(0.05);
+                    }
+                }
+                if (gamepad2.a) {
+                    yPressed = false ;
+                    if (aPressed == false)  {
+                        aPressed = true;
+                        liftCraneSlightly(-0.05);
+                    }
+                }
+                if (!(gamepad2.y || gamepad2.a)) {
+                    yPressed = false ;
+                    aPressed = false ;
+                }
             }
             stopCrane();
             stopAllWheelsNoInterrupt();

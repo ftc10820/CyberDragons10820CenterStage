@@ -543,7 +543,7 @@ public class Qualifier2_RedLeft extends LinearOpMode {
         final double BACKDROP_DIST_IN_CM = 8.0 ;
         eTime1.reset();
         crane.setPower(speed);
-        while((distanceBucket.getDistance(DistanceUnit.CM) > BACKDROP_DIST_IN_CM) && (eTime1.milliseconds() < EXTEND_TIMEOUT)) {
+        while((distanceBucket.getDistance(DistanceUnit.CM) > BACKDROP_DIST_IN_CM) && (crane.getCurrentPosition() < craneMax) && (eTime1.milliseconds() < EXTEND_TIMEOUT)) {
 
         }
         stopCrane();
@@ -567,7 +567,7 @@ public class Qualifier2_RedLeft extends LinearOpMode {
         // NOTE: timeout depends on the speed
         eTime1.reset();
         crane.setVelocity(vel);
-        while ((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (eTime1.milliseconds() < timeout_milli)) {
+        while ((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (crane.getCurrentPosition() < craneMax) && (eTime1.milliseconds() < timeout_milli)) {
         }
         stopCraneVelocity();
 
