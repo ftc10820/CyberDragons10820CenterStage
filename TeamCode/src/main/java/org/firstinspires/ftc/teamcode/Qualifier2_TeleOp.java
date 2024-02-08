@@ -131,6 +131,7 @@ public class Qualifier2_TeleOp extends LinearOpMode {
             telemetry.addData("crane encoder value: ", crane.getCurrentPosition());
             telemetry.addData("right color sensor value: ", getPixelDetectionRightVal());
             telemetry.addData("left color sensor value: ", getPixelDetectionLeftVal());
+            telemetry.addData("bucket distance: ", distanceBucket.getDistance(DistanceUnit.CM));
             telemetry.update();
 
             // light up the LEDs
