@@ -201,12 +201,14 @@ public class Qualifier2_TeleOp extends LinearOpMode {
             }
 
             if (gamepad1.y) {
-                extendCraneUseSensorVelocity(4000, 5000, 15, 2000); ;
-                liftCraneSlightly(0.2);
-                sleep(50) ;
-                retractCraneHome(0.8, 1000);
-                positionCraneBase();
-                retractCraneHome(0.8, 2000);
+                int retval = extendCraneUseSensorVelocity(4000, 5000, 15, 1500); ;
+                if (retval == 0) {
+                    liftCraneSlightly(0.2);
+                    sleep(50) ;
+                    retractCraneHome(0.8, 1000);
+                    positionCraneBase();
+                    retractCraneHome(0.8, 2000);
+                }
             }
 
             if (gamepad1.x) {
@@ -271,7 +273,7 @@ public class Qualifier2_TeleOp extends LinearOpMode {
              */
 
             // only for end game
-            if(eTeleOp.milliseconds() > 90000) {
+            //if(eTeleOp.milliseconds() > 90000) {
                 driveSuspension(-gamepad2.right_stick_y);
 
                 if (gamepad2.right_trigger > 0) {
@@ -284,7 +286,7 @@ public class Qualifier2_TeleOp extends LinearOpMode {
                     sleep(100);
                     stopCrane();
                 }
-            }
+            //}
 
             if(gamepad2.dpad_up) { // throws pixel into bucket
                 liftIntakePlatform();
@@ -704,14 +706,19 @@ public class Qualifier2_TeleOp extends LinearOpMode {
 
 
     }
-    void extendCraneUseSensorVelocity(double vel, int timeout_milli, double backdrop_dist_cm, int slow_time) {
+    int extendCraneUseSensorVelocity(double vel, int timeout_milli, double backdrop_dist_cm, int slow_time) {
         // extend crane till given timeout value or till the sensor detects proximity to backdrop based on given distance
         // NOTE: timeout depends on the speed
         eTime1.reset();
         crane.setVelocity(vel);
         boolean yPressed = false;
         boolean aPressed = false;
+        boolean tPressed = false ;
         while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (crane.getCurrentPosition() < craneMax) && (eTime1.milliseconds() < timeout_milli)) {
+                if (gamepad2.right_trigger > 0.0) {
+                    tPressed = true ;
+                    break ;
+                }
                 if (gamepad1.dpad_right) // note change
                     moveLeft(0.3) ;
                 else {
@@ -726,6 +733,8 @@ public class Qualifier2_TeleOp extends LinearOpMode {
                     if (yPressed == false)  {
                         yPressed = true;
                         liftCraneSlightly(0.05);
+                        // increase time
+                        slow_time = slow_time + 1000;
                     }
                 }
                 if (gamepad2.a) {
@@ -745,18 +754,26 @@ public class Qualifier2_TeleOp extends LinearOpMode {
         //sleep(500);
         stopAllWheelsNoInterrupt();
 
+        if(tPressed == true) {
+            return 1;
+        }
+
         yPressed = false;
         aPressed = false;
 
         if (crane.getCurrentPosition() < 4000) {
 
-            crane.setVelocity(vel*0.1);
+            crane.setVelocity(vel*0.2);
             int ttime = slow_time ;
             // for the highest angle; increase time
             if (craneAngle.getPosition() > 0.8)
                 ttime = ttime + 500;
             eTime1.reset();
             while(eTime1.milliseconds() < ttime) {
+                if (gamepad2.right_trigger > 0.0) {
+                    tPressed = true ;
+                    break ;
+                }
                 if (gamepad1.dpad_right) // note change
                     moveLeft(0.3) ;
                 else {
@@ -766,24 +783,27 @@ public class Qualifier2_TeleOp extends LinearOpMode {
                         stopAllWheelsNoInterrupt();
                 }
 
+                /*
                 if (gamepad2.y) {
                     aPressed = false ;
                     if (yPressed == false)  {
                         yPressed = true;
-                        liftCraneSlightly(0.05);
+                        liftCraneSlightly(0.1);
                     }
                 }
                 if (gamepad2.a) {
                     yPressed = false ;
                     if (aPressed == false)  {
                         aPressed = true;
-                        liftCraneSlightly(-0.05);
+                        liftCraneSlightly(-0.1);
                     }
                 }
                 if (!(gamepad2.y || gamepad2.a)) {
                     yPressed = false ;
                     aPressed = false ;
                 }
+
+                 */
             }
             stopCrane();
             stopAllWheelsNoInterrupt();
@@ -797,6 +817,11 @@ public class Qualifier2_TeleOp extends LinearOpMode {
 
         }
 
+        if(tPressed == true) {
+            return 1;
+        }
+
+        return 0 ;
 
 
 
