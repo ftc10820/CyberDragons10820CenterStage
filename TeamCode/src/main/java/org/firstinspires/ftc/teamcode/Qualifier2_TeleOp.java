@@ -131,7 +131,8 @@ public class Qualifier2_TeleOp extends LinearOpMode {
             telemetry.addData("crane encoder value: ", crane.getCurrentPosition());
             telemetry.addData("right color sensor value: ", getPixelDetectionRightVal());
             telemetry.addData("left color sensor value: ", getPixelDetectionLeftVal());
-            telemetry.addData("bucket distance: ", distanceBucket.getDistance(DistanceUnit.CM));
+            //telemetry.addData("bucket distance: ", distanceBucket.getDistance(DistanceUnit.CM));
+            telemetry.addData("bucket: ", "alpha " + colorFieldLine.alpha() + " red " + colorFieldLine.red() + " green " + colorFieldLine.green() + " blue " + colorFieldLine.blue() + " hue " + colorFieldLine.argb());
             telemetry.update();
 
             // light up the LEDs
@@ -201,11 +202,12 @@ public class Qualifier2_TeleOp extends LinearOpMode {
             }
 
             if (gamepad1.y) {
-                int retval = extendCraneUseSensorVelocity(4000, 5000, 15, 1500); ;
+                int retval = extendCraneUseSensorVelocity(4000, 5000, 600, 3000);
+                //sleep(200) ;
                 if (retval == 0) {
                     liftCraneSlightly(0.2);
-                    sleep(50) ;
-                    retractCraneHome(0.8, 1000);
+                    sleep(250) ;
+                    retractCraneHome(0.8, 2000);
                     positionCraneBase();
                     retractCraneHome(0.8, 2000);
                 }
@@ -713,12 +715,21 @@ public class Qualifier2_TeleOp extends LinearOpMode {
         crane.setVelocity(vel);
         boolean yPressed = false;
         boolean aPressed = false;
-        boolean tPressed = false ;
-        while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (crane.getCurrentPosition() < craneMax) && (eTime1.milliseconds() < timeout_milli)) {
-                if (gamepad2.right_trigger > 0.0) {
+        boolean tPressed = false;
+        //while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (crane.getCurrentPosition() < craneMax) && (eTime1.milliseconds() < timeout_milli))
+        int colorVal = 0;
+        while((colorVal = colorFieldLine.red()) < 40)
+        {
+                if ((crane.getCurrentPosition() > craneMax) || (eTime1.milliseconds() > timeout_milli))
+                    break ;
+
+                if((colorVal = colorFieldLine.red()) >= 40) { stopCrane(); break ; }
+
+                if (gamepad2.right_bumper) {
                     tPressed = true ;
                     break ;
                 }
+                if((colorVal = colorFieldLine.red()) >= 40) { stopCrane(); break ; }
                 if (gamepad1.dpad_right) // note change
                     moveLeft(0.3) ;
                 else {
@@ -727,6 +738,7 @@ public class Qualifier2_TeleOp extends LinearOpMode {
                     else
                         stopAllWheelsNoInterrupt();
                 }
+                if((colorVal = colorFieldLine.red()) >= 40) { stopCrane(); break ; }
 
                 if (gamepad2.y) {
                     aPressed = false ;
@@ -737,6 +749,7 @@ public class Qualifier2_TeleOp extends LinearOpMode {
                         slow_time = slow_time + 1000;
                     }
                 }
+                if((colorVal = colorFieldLine.red()) >= 40) { stopCrane(); break ; }
                 if (gamepad2.a) {
                     yPressed = false ;
                     if (aPressed == false)  {
@@ -744,6 +757,7 @@ public class Qualifier2_TeleOp extends LinearOpMode {
                         liftCraneSlightly(-0.05);
                     }
                 }
+                if((colorVal = colorFieldLine.red()) >= 40) { stopCrane(); break ; }
                 if (!(gamepad2.y || gamepad2.a)) {
                     yPressed = false ;
                     aPressed = false ;
@@ -751,26 +765,33 @@ public class Qualifier2_TeleOp extends LinearOpMode {
 
         }
         stopCrane();
-        //sleep(500);
+        sleep(200);
         stopAllWheelsNoInterrupt();
+
+        telemetry.addData("Color val at stop:", colorVal + "currentVal " + colorFieldLine.red());
+        telemetry.update() ;
 
         if(tPressed == true) {
             return 1;
         }
+        //sleep(3000) ;
 
+        crane.setVelocity(-vel*0.15);
+        sleep(200) ;
+        stopCrane();
         yPressed = false;
         aPressed = false;
 
-        if (crane.getCurrentPosition() < 4000) {
+        if ((crane.getCurrentPosition() < craneMax) ) {
 
-            crane.setVelocity(vel*0.2);
+            crane.setVelocity(vel*0.15);
             int ttime = slow_time ;
             // for the highest angle; increase time
             if (craneAngle.getPosition() > 0.8)
                 ttime = ttime + 500;
             eTime1.reset();
-            while(eTime1.milliseconds() < ttime) {
-                if (gamepad2.right_trigger > 0.0) {
+            while((eTime1.milliseconds() < ttime) && (colorFieldLine.red() < (int)backdrop_dist_cm)) {
+                if (gamepad2.right_bumper) {
                     tPressed = true ;
                     break ;
                 }
@@ -857,13 +878,13 @@ public class Qualifier2_TeleOp extends LinearOpMode {
         stopCrane();
     }
     void positionCraneLow() {
-        craneAngle.setPosition(0.55);
+        craneAngle.setPosition(0.60);
     }
     void positionCraneMedium() {
-        craneAngle.setPosition(0.70);
+        craneAngle.setPosition(0.75);
     }
     void positionCraneHigh() {
-        craneAngle.setPosition(0.91);
+        craneAngle.setPosition(0.90);
     }
 
     void positionCraneBase() {
