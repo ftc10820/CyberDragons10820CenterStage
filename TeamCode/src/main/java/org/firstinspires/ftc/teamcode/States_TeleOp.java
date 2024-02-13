@@ -73,9 +73,8 @@ public class States_TeleOp extends LinearOpMode {
 
     // touch sensor used with linear slide
     public TouchSensor touchCrane;
-    // Color sensor at the back of the robot used for detecting lines on the field
-    // NOTE: Reusing for bucket, but needs to renamed
-    public ColorSensor colorFieldLine;
+    // Color sensor on bucket
+    public ColorSensor colorBucket;
 
 
     // helper variables
@@ -86,7 +85,9 @@ public class States_TeleOp extends LinearOpMode {
 
     double speedFactor = 0.75;
 
-    int craneMax = 4500;
+    // crane specific vars
+    final int CRANE_MAX_ENCODER_VAL = 4500;
+    final double CRANE_MAX_VELOCITY = 4000 ;
 
     double cranePosUp = 0.0 ;
     double cranePosDown = 1.0 ;
@@ -117,7 +118,7 @@ public class States_TeleOp extends LinearOpMode {
             telemetry.addData("right color sensor value: ", getPixelDetectionRightVal());
             telemetry.addData("left color sensor value: ", getPixelDetectionLeftVal());
             //telemetry.addData("bucket distance: ", distanceBucket.getDistance(DistanceUnit.CM));
-            telemetry.addData("bucket: ", "alpha " + colorFieldLine.alpha() + " red " + colorFieldLine.red() + " green " + colorFieldLine.green() + " blue " + colorFieldLine.blue() + " hue " + colorFieldLine.argb());
+            telemetry.addData("bucket: ", "alpha " + colorBucket.alpha() + " red " + colorBucket.red() + " green " + colorBucket.green() + " blue " + colorBucket.blue() + " hue " + colorBucket.argb());
             telemetry.update();
 
             // light up the LEDs
@@ -148,19 +149,20 @@ public class States_TeleOp extends LinearOpMode {
             }
 
             if (gamepad1.y) {
-                int retval = extendCraneUseColorSensorVelocity(4000, 5000, 600, 3000);
+                int retval = extendCraneUseColorSensorVelocity(CRANE_MAX_VELOCITY, 5000, 600, 3000);
                 //sleep(200) ;
+                // the below part cane be made asynchronous
                 if (retval == 0) {
                     liftCraneSlightly(0.2);
                     sleep(250) ;
-                    retractCraneHome(0.8, 2000);
+                    retractCraneHomeVelocity(CRANE_MAX_VELOCITY, 2000);
                     positionCraneBase();
-                    retractCraneHome(0.8, 2000);
+                    retractCraneHomeVelocity(CRANE_MAX_VELOCITY, 2000);
                 }
             }
 
             if (gamepad1.x) {
-                retractCraneHome(0.8, 2500);
+                retractCraneHomeVelocity(CRANE_MAX_VELOCITY, 5000);
             }
 
             if (gamepad2.y) {
@@ -179,7 +181,7 @@ public class States_TeleOp extends LinearOpMode {
                 cranePower *= 0.2;
             if ((cranePower < 0) && (touchCrane.isPressed()))
                 cranePower *= 0.1;*/
-            extendCraneVelocity(cranePower*4000);
+            extendCraneVelocity(cranePower*CRANE_MAX_VELOCITY);
 
             // logic for manual lifting of crane
             /*
@@ -230,7 +232,7 @@ public class States_TeleOp extends LinearOpMode {
 
             if (gamepad2.left_trigger > 0) {
                 releaseSuspensionHook();
-                extendCraneVelocity(4000);
+                extendCraneVelocity(CRANE_MAX_VELOCITY);
                 sleep(100);
                 stopCrane();
             }
@@ -298,7 +300,7 @@ public class States_TeleOp extends LinearOpMode {
 
         //sensors
         touchCrane = hardwareMap.get(TouchSensor.class, "Touch");
-        colorFieldLine = hardwareMap.get(ColorSensor.class, "Color");
+        colorBucket = hardwareMap.get(ColorSensor.class, "Color");
 
         pixelDetectorLeft = hardwareMap.get(ColorSensor.class, "PixelDetectorLeft");
         pixelDetectorRight = hardwareMap.get(ColorSensor.class, "PixelDetectorRight");
@@ -488,43 +490,28 @@ public class States_TeleOp extends LinearOpMode {
     void extendCraneVelocity(double vel) {
         crane.setVelocity(vel);
     }
-    void extendCraneUseSensorVelocity(double vel) {
+    int extendCraneUseDistanceSensorVelocity(double vel, int timeout_milli, int backdrop_dist_cm, int slow_time) {
         // extend crane till a timeout value or till the sensor detects closeness to backdrop
-        final int EXTEND_TIMEOUT = 2000 ; // timeout depends on the speed
-        final double BACKDROP_DIST_IN_CM = 8.0 ;
-        eTime1.reset();
-        crane.setVelocity(vel);
-        while((distanceBucket.getDistance(DistanceUnit.CM) > BACKDROP_DIST_IN_CM) && (eTime1.milliseconds() < EXTEND_TIMEOUT)) {
-
-        }
-        stopCrane();
-
-    }
-    int extendCraneUseColorSensorVelocity(double vel, int timeout_milli, int backdrop_color_val, int slow_time) {
-        // extend crane till given timeout value or till the sensor detects proximity to backdrop based on given distance
-        // NOTE: timeout depends on the speed
+        // simpler function than when color sensor is used
         eTime1.reset();
         crane.setVelocity(vel);
         boolean yPressed = false;
         boolean aPressed = false;
         boolean tPressed = false;
-        //while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (crane.getCurrentPosition() < craneMax) && (eTime1.milliseconds() < timeout_milli))
-        int colorVal = 0;
+        double distval = 0.0 ;
 
-        final int BUCKET_COLOR_THRESHOLD = 40 ;
-
-        while((colorVal = colorFieldLine.red()) < BUCKET_COLOR_THRESHOLD) //
+        while((distval = distanceBucket.getDistance(DistanceUnit.CM)) > backdrop_dist_cm) //
         {
-            if ((crane.getCurrentPosition() > craneMax) || (eTime1.milliseconds() > timeout_milli))
+            if ((crane.getCurrentPosition() > CRANE_MAX_ENCODER_VAL) || (eTime1.milliseconds() > timeout_milli))
                 break ;
 
-            if((colorVal = colorFieldLine.red()) >= 40) { stopCrane(); break ; }
+            if((distval = distanceBucket.getDistance(DistanceUnit.CM)) <= backdrop_dist_cm) { stopCrane(); break ; }
 
             if (gamepad2.right_bumper) {
                 tPressed = true ;
                 break ;
             }
-            if((colorVal = colorFieldLine.red()) >= 40) { stopCrane(); break ; }
+            if((distval = distanceBucket.getDistance(DistanceUnit.CM)) <= backdrop_dist_cm) { stopCrane(); break ; }
             if (gamepad1.dpad_right) // note change
                 moveLeft(0.3) ;
             else {
@@ -533,7 +520,7 @@ public class States_TeleOp extends LinearOpMode {
                 else
                     stopAllWheelsNoInterrupt();
             }
-            if((colorVal = colorFieldLine.red()) >= 40) { stopCrane(); break ; }
+            if((distval = distanceBucket.getDistance(DistanceUnit.CM)) <= backdrop_dist_cm) { stopCrane(); break ; }
 
             if (gamepad2.y) {
                 aPressed = false ;
@@ -544,7 +531,7 @@ public class States_TeleOp extends LinearOpMode {
                     slow_time = slow_time + 1000;
                 }
             }
-            if((colorVal = colorFieldLine.red()) >= 40) { stopCrane(); break ; }
+            if((distval = distanceBucket.getDistance(DistanceUnit.CM)) <= backdrop_dist_cm) { stopCrane(); break ; }
             if (gamepad2.a) {
                 yPressed = false ;
                 if (aPressed == false)  {
@@ -552,7 +539,7 @@ public class States_TeleOp extends LinearOpMode {
                     liftCraneSlightly(-0.05);
                 }
             }
-            if((colorVal = colorFieldLine.red()) >= 40) { stopCrane(); break ; }
+            if((distval = distanceBucket.getDistance(DistanceUnit.CM)) <= backdrop_dist_cm) { stopCrane(); break ; }
             if (!(gamepad2.y || gamepad2.a)) {
                 yPressed = false ;
                 aPressed = false ;
@@ -563,7 +550,7 @@ public class States_TeleOp extends LinearOpMode {
         sleep(200);
         stopAllWheelsNoInterrupt();
 
-        telemetry.addData("Color val at stop:", colorVal + "currentVal " + colorFieldLine.red());
+        telemetry.addData("Distance val at stop:", distval );
         telemetry.update() ;
 
         if(tPressed == true) {
@@ -578,7 +565,7 @@ public class States_TeleOp extends LinearOpMode {
         yPressed = false;
         aPressed = false;
 
-        if ((crane.getCurrentPosition() < craneMax) ) {
+        if ((crane.getCurrentPosition() < CRANE_MAX_ENCODER_VAL) ) {
 
             crane.setVelocity(vel*0.15);
             int ttime = slow_time ;
@@ -586,7 +573,7 @@ public class States_TeleOp extends LinearOpMode {
             if (craneAngle.getPosition() > 0.8)
                 ttime = ttime + 500;
             eTime1.reset();
-            while((eTime1.milliseconds() < ttime) && (colorFieldLine.red() < backdrop_color_val)) {
+            while(eTime1.milliseconds() < ttime) {
                 if (gamepad2.right_bumper) {
                     tPressed = true ;
                     break ;
@@ -633,34 +620,166 @@ public class States_TeleOp extends LinearOpMode {
 
         return 0 ;
 
-
-
     }
-    void retractCrane(double speed) {
-        crane.setPower(-1.0*speed);
-    }
+    int extendCraneUseColorSensorVelocity(double vel, int timeout_milli, int backdrop_color_val, int slow_time) {
+        // extend crane till given timeout value or till the sensor detects proximity to backdrop based on color sensor
+        boolean yPressed = false;
+        boolean aPressed = false;
+        boolean tPressed = false;
+        int colorVal = 0;
 
-    void stopCrane() {
-        crane.setPower(0.0);
-    }
+        final int BUCKET_COLOR_FINAL_THRESHOLD = 40 ;
+        final int BUCKET_COLOR_FIRST_THRESHOLD = 35 ;
 
-    // see overloaded function ; use appropriately
-    void retractCraneHome(double speed) {
-        // retract crane till it hits sensor or a certain timeout val
-        // NOTE: speed should determine timeout value
-        final int RETRACT_TIMEOUT = 2000 ;
         eTime1.reset();
-        retractCrane(speed);
-        while((!touchCrane.isPressed()) && (eTime1.milliseconds() < RETRACT_TIMEOUT)) {
+        crane.setVelocity(vel);
+        // there is a way to do proportional velocity reduction rather than keep velocity constant
+        // FOR FUTURE WORK
+        while((colorVal = colorBucket.red()) < BUCKET_COLOR_FINAL_THRESHOLD) //
+        {
+            // see if this is good
+            /*
+            if (colorVal > BUCKET_COLOR_FIRST_THRESHOLD) {
+                crane.setVelocity(vel*0.5);
+            }
+            */
+
+            if ((crane.getCurrentPosition() > CRANE_MAX_ENCODER_VAL) || (eTime1.milliseconds() > timeout_milli))
+                break ;
+
+            if((colorVal = colorBucket.red()) >= 40) { stopCrane(); break ; }
+
+            if (gamepad2.right_bumper) {
+                tPressed = true ;
+                break ;
+            }
+            if((colorVal = colorBucket.red()) >= 40) { stopCrane(); break ; }
+            if (gamepad1.dpad_right) // note change
+                moveLeft(0.3) ;
+            else {
+                if(gamepad1.dpad_left) // note change
+                    moveRight(0.3) ;
+                else
+                    stopAllWheelsNoInterrupt();
+            }
+            if((colorVal = colorBucket.red()) >= 40) { stopCrane(); break ; }
+
+            if (gamepad2.y) {
+                aPressed = false ;
+                if (yPressed == false)  {
+                    yPressed = true;
+                    liftCraneSlightly(0.05);
+                    // increase time
+                    slow_time = slow_time + 1000;
+                }
+            }
+            if((colorVal = colorBucket.red()) >= 40) { stopCrane(); break ; }
+            if (gamepad2.a) {
+                yPressed = false ;
+                if (aPressed == false)  {
+                    aPressed = true;
+                    liftCraneSlightly(-0.05);
+                }
+            }
+            if((colorVal = colorBucket.red()) >= 40) { stopCrane(); break ; }
+            if (!(gamepad2.y || gamepad2.a)) {
+                yPressed = false ;
+                aPressed = false ;
+            }
 
         }
         stopCrane();
+        sleep(200);
+        stopAllWheelsNoInterrupt();
+
+        telemetry.addData("Color val at stop:", colorVal + "currentVal " + colorBucket.red());
+        telemetry.update() ;
+
+        if(tPressed == true) {
+            return 1;
+        }
+        //sleep(3000) ;
+
+        // reversing to slow down motor
+        // check if this is useful
+        retractCraneVelocity(vel*0.15);
+        sleep(200) ;
+        stopCrane();
+
+        yPressed = false;
+        aPressed = false;
+
+        if ((crane.getCurrentPosition() < CRANE_MAX_ENCODER_VAL) ) {
+
+            crane.setVelocity(vel*0.15);
+            int ttime = slow_time ;
+            // for the highest angle; increase time
+            if (craneAngle.getPosition() > 0.8)
+                ttime = ttime + 500;
+            eTime1.reset();
+            while((eTime1.milliseconds() < ttime) && (colorBucket.red() < backdrop_color_val)) {
+                if (gamepad2.right_bumper) {
+                    tPressed = true ;
+                    break ;
+                }
+                if (gamepad1.dpad_right) // note change
+                    moveLeft(0.3) ;
+                else {
+                    if(gamepad1.dpad_left)
+                        moveRight(0.3) ;
+                    else
+                        stopAllWheelsNoInterrupt();
+                }
+
+                /*
+                if (gamepad2.y) {
+                    aPressed = false ;
+                    if (yPressed == false)  {
+                        yPressed = true;
+                        liftCraneSlightly(0.1);
+                    }
+                }
+                if (gamepad2.a) {
+                    yPressed = false ;
+                    if (aPressed == false)  {
+                        aPressed = true;
+                        liftCraneSlightly(-0.1);
+                    }
+                }
+                if (!(gamepad2.y || gamepad2.a)) {
+                    yPressed = false ;
+                    aPressed = false ;
+                }
+
+                 */
+            }
+            stopCrane();
+            stopAllWheelsNoInterrupt();
+
+        }
+
+        if(tPressed == true) {
+            return 1;
+        }
+
+        return 0 ;
+
+    }
+    void retractCraneVelocity(double vel) {
+        crane.setVelocity(-1.0*vel);
     }
 
-    void retractCraneHome(double speed, int timeout_milli) {
+    void stopCrane() {
+        crane.setVelocity(0.0);
+    }
+    void stopCraneVelocity() {
+        crane.setVelocity(0.0);
+    }
+
+    void retractCraneHomeVelocity(double vel, int timeout_milli) {
         // retract crane till it hits sensor or given timeout val
         eTime1.reset();
-        retractCrane(speed);
+        retractCraneVelocity(vel);
         while((!touchCrane.isPressed()) && (eTime1.milliseconds() < timeout_milli)) {
 
         }

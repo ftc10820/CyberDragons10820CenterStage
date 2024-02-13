@@ -75,8 +75,8 @@ public class States_BlueRight extends LinearOpMode {
 
     // touch sensor used with linear slide
     public TouchSensor touchCrane;
-    // Color sensor at the back of the robot used for detecting lines on the field
-    public ColorSensor colorFieldLine;
+    // Color sensor on bucket
+    public ColorSensor colorBucket;
 
     // Vision portal and vision processing pipelines
 
@@ -138,6 +138,10 @@ public class States_BlueRight extends LinearOpMode {
     public static double turnDistance = 0;
 
     public double slowerVelocity = 20.0;
+
+    // crane specific vars
+    final int CRANE_MAX_ENCODER_VAL = 4500;
+    final double CRANE_MAX_VELOCITY = 4000 ;
 
 
     @Override
@@ -291,14 +295,13 @@ public class States_BlueRight extends LinearOpMode {
 
                 positionCraneLow();
                 sleep(2500) ;
-                extendCraneUseSensorVelocity(4000, 5000, 15, 2000);
+                extendCraneUseColorSensorVelocity(CRANE_MAX_VELOCITY, 5000, 600, 3000);
 
                 liftCraneSlightly(0.2);
                 sleep(2000);
-                retractCraneVelocity(3000);
-                sleep(1500);
-                stopCraneVelocity();
-
+                retractCraneHomeVelocity(CRANE_MAX_VELOCITY, 2000);
+                positionCraneBase();
+                retractCraneHomeVelocity(CRANE_MAX_VELOCITY, 2000);
             }
 
         }
@@ -331,7 +334,7 @@ public class States_BlueRight extends LinearOpMode {
 
         //sensors
         touchCrane = hardwareMap.get(TouchSensor.class, "Touch");
-        colorFieldLine = hardwareMap.get(ColorSensor.class, "Color");
+        colorBucket = hardwareMap.get(ColorSensor.class, "Color");
 
         pixelDetectorLeft = hardwareMap.get(ColorSensor.class, "PixelDetectorLeft");
         pixelDetectorRight = hardwareMap.get(ColorSensor.class, "PixelDetectorRight");
@@ -445,92 +448,115 @@ public class States_BlueRight extends LinearOpMode {
         indexer.setPosition(1.0);
     }
 
-    void extendCrane(double speed) {
-        crane.setPower(speed);
+    void extendCraneVelocity(double vel) {
+        crane.setVelocity(vel);
     }
-    // see overloaded function ; use appropriately
-    void extendCraneUseSensor(double speed) {
+    int extendCraneUseDistanceSensorVelocity(double vel, int timeout_milli, int backdrop_dist_cm, int slow_time) {
         // extend crane till a timeout value or till the sensor detects closeness to backdrop
-        final int EXTEND_TIMEOUT = 2000 ; // timeout depends on the speed
-        final double BACKDROP_DIST_IN_CM = 8.0 ;
-        eTime1.reset();
-        crane.setPower(speed);
-        while((distanceBucket.getDistance(DistanceUnit.CM) > BACKDROP_DIST_IN_CM) && (eTime1.milliseconds() < EXTEND_TIMEOUT)) {
-
-        }
-        stopCrane();
-    }
-    void extendCraneUseSensor(double speed, int timeout_milli, double backdrop_dist_cm, int slow_time) {
-        // extend crane till given timeout value or till the sensor detects proximity to backdrop based on given distance
-        // NOTE: timeout depends on the speed
-        eTime1.reset();
-        crane.setPower(speed);
-        while((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (eTime1.milliseconds() < timeout_milli)) {
-
-        }
-        stopCrane();
-        crane.setPower(0.2);
-        sleep(slow_time) ;
-        stopCrane();
-    }
-    void extendCraneUseSensorVelocity(double vel, int timeout_milli, double backdrop_dist_cm, int slow_time) {
-        // extend crane till given timeout value or till the sensor detects proximity to backdrop based on given distance
-        // NOTE: timeout depends on the speed
+        // simpler function than when color sensor is used
         eTime1.reset();
         crane.setVelocity(vel);
-        while ((distanceBucket.getDistance(DistanceUnit.CM) > backdrop_dist_cm) && (crane.getCurrentPosition() < craneMax) && (eTime1.milliseconds() < timeout_milli)) {
+        double distval = 0.0 ;
+
+        while((distval = distanceBucket.getDistance(DistanceUnit.CM)) > backdrop_dist_cm) //
+        {
+            if ((crane.getCurrentPosition() > CRANE_MAX_ENCODER_VAL) || (eTime1.milliseconds() > timeout_milli))
+                break ;
+
         }
-        stopCraneVelocity();
+        stopCrane();
+        sleep(200);
+
+        telemetry.addData("Distance val at stop:", distval );
+        telemetry.update() ;
 
 
-        crane.setVelocity(vel * 0.1);
-        int ttime = slow_time;
-        // for the highest angle; increase time
-        if (craneAngle.getPosition() > 0.8)
-            ttime = ttime + 500;
-        sleep(ttime) ;
-        stopCraneVelocity();
+        // reversing to slow down motor
+        crane.setVelocity(-vel*0.15);
+        sleep(200) ;
+        stopCrane();
+
+        if ((crane.getCurrentPosition() < CRANE_MAX_ENCODER_VAL) ) {
+
+            crane.setVelocity(vel*0.15);
+            int ttime = slow_time ;
+            // for the highest angle; increase time
+            if (craneAngle.getPosition() > 0.8)
+                ttime = ttime + 500;
+            eTime1.reset();
+            while(eTime1.milliseconds() < ttime) {
+            }
+            stopCrane();
+
+        }
+
+        return 0 ;
 
     }
+    int extendCraneUseColorSensorVelocity(double vel, int timeout_milli, int backdrop_color_val, int slow_time) {
+        // extend crane till given timeout value or till the sensor detects proximity to backdrop based on color sensor
+        int colorVal = 0;
 
+        final int BUCKET_COLOR_FINAL_THRESHOLD = 40 ;
+        final int BUCKET_COLOR_FIRST_THRESHOLD = 35 ;
 
-    void retractCrane(double speed) {
-        crane.setPower(-1.0*speed);
+        eTime1.reset();
+        crane.setVelocity(vel);
+        // there is a way to do proportional velocity reduction rather than keep velocity constant
+        // FOR FUTURE WORK
+        while((colorVal = colorBucket.red()) < BUCKET_COLOR_FINAL_THRESHOLD) //
+        {
+            // see if this is good
+            /*
+            if (colorVal > BUCKET_COLOR_FIRST_THRESHOLD) {
+                crane.setVelocity(vel*0.5);
+            }
+            */
+
+            if ((crane.getCurrentPosition() > CRANE_MAX_ENCODER_VAL) || (eTime1.milliseconds() > timeout_milli))
+                break ;
+
+        }
+        stopCrane();
+        sleep(200);
+
+        telemetry.addData("Color val at stop:", colorVal + "currentVal " + colorBucket.red());
+        telemetry.update() ;
+
+        // reversing to slow down motor
+        // check if this is useful
+        retractCraneVelocity(vel*0.15);
+        sleep(200) ;
+        stopCrane();
+
+        if ((crane.getCurrentPosition() < CRANE_MAX_ENCODER_VAL) ) {
+
+            crane.setVelocity(vel*0.15);
+            int ttime = slow_time ;
+            // for the highest angle; increase time
+            if (craneAngle.getPosition() > 0.8)
+                ttime = ttime + 500;
+            eTime1.reset();
+            while((eTime1.milliseconds() < ttime) && (colorBucket.red() < backdrop_color_val)) {
+            }
+            stopCrane();
+
+        }
+
+        return 0 ;
+
     }
     void retractCraneVelocity(double vel) {
         crane.setVelocity(-1.0*vel);
     }
 
     void stopCrane() {
-        crane.setPower(0.0);
+        crane.setVelocity(0.0);
     }
-
     void stopCraneVelocity() {
         crane.setVelocity(0.0);
     }
 
-    // see overloaded function ; use appropriately
-    void retractCraneHome(double speed) {
-        // retract crane till it hits sensor or a certain timeout val
-        // NOTE: speed should determine timeout value
-        final int RETRACT_TIMEOUT = 2000 ;
-        eTime1.reset();
-        retractCrane(speed);
-        while((!touchCrane.isPressed()) && (eTime1.milliseconds() < RETRACT_TIMEOUT)) {
-
-        }
-        stopCrane();
-    }
-
-    void retractCraneHome(double speed, int timeout_milli) {
-        // retract crane till it hits sensor or given timeout val
-        eTime1.reset();
-        retractCrane(speed);
-        while((!touchCrane.isPressed()) && (eTime1.milliseconds() < timeout_milli)) {
-
-        }
-        stopCrane();
-    }
     void retractCraneHomeVelocity(double vel, int timeout_milli) {
         // retract crane till it hits sensor or given timeout val
         eTime1.reset();
@@ -538,7 +564,7 @@ public class States_BlueRight extends LinearOpMode {
         while((!touchCrane.isPressed()) && (eTime1.milliseconds() < timeout_milli)) {
 
         }
-        stopCraneVelocity();
+        stopCrane();
     }
     void positionCraneLow() {
         craneAngle.setPosition(0.53);
