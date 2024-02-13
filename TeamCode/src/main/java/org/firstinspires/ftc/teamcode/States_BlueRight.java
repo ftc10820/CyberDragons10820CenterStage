@@ -34,6 +34,7 @@ import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 
 
@@ -145,7 +146,6 @@ public class States_BlueRight extends LinearOpMode {
         initialize();
         initIntakePlatform();
         closeRightIntake();
-        openLeftIntake();
 
         vision = new VisionSubsystem(hardwareMap);
         vision.setAlliance("blue");
@@ -156,103 +156,64 @@ public class States_BlueRight extends LinearOpMode {
         Pose2d startPose = new Pose2d(-36, 60, Math.toRadians(90));
         drive.setPoseEstimate(startPose);
 
-        Trajectory traj1 = drive.trajectoryBuilder(startPose)
+        Trajectory zone1_1 = drive.trajectoryBuilder(startPose)
                 .lineToLinearHeading(new Pose2d(-40,32, Math.toRadians(0)))
                 .build();
 
-        Trajectory zone1_1 = drive.trajectoryBuilder(traj1.end())
-                .forward(10.0)
-                .build();
-
         Trajectory zone1_2 = drive.trajectoryBuilder(zone1_1.end())
-                .back(4.0)
+                .forward(8.0)
                 .build();
 
         Trajectory zone1_3 = drive.trajectoryBuilder(zone1_2.end())
-                .lineToLinearHeading(new Pose2d(-58,37, Math.toRadians(180)))
+                .back(10.0)
                 .build();
 
-        Trajectory zone1_4 = drive.trajectoryBuilder(zone1_3.end())
-                .forward(6.0, SampleMecanumDrive.getVelocityConstraint(slowerVelocity, DriveConstants.MAX_ANG_VEL,
-                        DriveConstants.TRACK_WIDTH), SampleMecanumDrive.getAccelerationConstraint(DriveConstants.MAX_ACCEL))
+        Trajectory zone1_4 = drive.trajectoryBuilder(zone1_3.end().plus(new Pose2d(0,0, Math.toRadians(180))))
+                .strafeLeft(20.0)
                 .build();
 
         Trajectory zone1_5 = drive.trajectoryBuilder(zone1_4.end())
-                .splineToConstantHeading(new Vector2d(-36,6), Math.toRadians(180))
+                .lineToLinearHeading(new Pose2d(-12,6, Math.toRadians(180)))
                 .build();
 
-        Trajectory zone1_6 = drive.trajectoryBuilder(zone1_5.end())
-                .lineToLinearHeading(new Pose2d(36,6, Math.toRadians(180)))
-                .build();
-
-        Trajectory zone1_7 = drive.trajectoryBuilder(zone1_6.end())
-                .splineToConstantHeading(new Vector2d(42,24), Math.toRadians(180))
-                .build();
-
-        Trajectory zone3_1 = drive.trajectoryBuilder(traj1.end())
-                .back(13.0)
-                .build();
-
-        Trajectory zone3_2 = drive.trajectoryBuilder(zone3_1.end())
-                .lineTo(new Vector2d(-58,32),
-                        SampleMecanumDrive.getVelocityConstraint(slowerVelocity, DriveConstants.MAX_ANG_VEL,
-                                DriveConstants.TRACK_WIDTH), SampleMecanumDrive.getAccelerationConstraint(DriveConstants.MAX_ACCEL))
-
-                .build();
-
-        Trajectory backstage_1 = drive.trajectoryBuilder(zone3_2.end())
-                .strafeRight(28.0, SampleMecanumDrive.getVelocityConstraint(slowerVelocity, DriveConstants.MAX_ANG_VEL,
-                        DriveConstants.TRACK_WIDTH), SampleMecanumDrive.getAccelerationConstraint(DriveConstants.MAX_ACCEL))
-                .build();
-
-        Trajectory backstage_2 = drive.trajectoryBuilder(backstage_1.end())
-                .lineTo(new Vector2d(42, 10))
-                .build();
-
-        Trajectory zone2_traj1 = drive.trajectoryBuilder(startPose)
+        Trajectory zone2_1 = drive.trajectoryBuilder(startPose)
                 .back(44.0)
                 .build();
 
-        Trajectory zone2_traj2 = drive.trajectoryBuilder(zone2_traj1.end())
+        Trajectory zone2_2 = drive.trajectoryBuilder(zone2_1.end())
                 .back(12.0)
                 .build();
 
-        Trajectory zone2_traj3 = drive.trajectoryBuilder(zone2_traj2.end().plus(new Pose2d(0,0, Math.toRadians(90))))
-                .lineTo(new Vector2d(42, 10))
+        Trajectory zone2_3 = drive.trajectoryBuilder(zone2_2.end().plus(new Pose2d(0,0, Math.toRadians(90))))
+                .lineToLinearHeading(new Pose2d(-12,6, Math.toRadians(180)))
                 .build();
 
-        Trajectory zone2_traj4 = drive.trajectoryBuilder(zone2_traj3.end())
-                .lineTo(new Vector2d(42, 34))
+        Trajectory zone3_1 = drive.trajectoryBuilder(startPose)
+                .lineToLinearHeading(new Pose2d(-40,24, Math.toRadians(180)))
                 .build();
 
-        Trajectory zone2_traj5 = drive.trajectoryBuilder(zone2_traj4.end())
-                .forward(6.0)
+        Trajectory zone3_2 = drive.trajectoryBuilder(zone3_1.end())
+                .forward(3.0)
                 .build();
 
-        Trajectory backstage_3 = drive.trajectoryBuilder(backstage_2.end().plus(new Pose2d(0,0, Math.toRadians(180))))
-                .lineTo(new Vector2d(42, 28))
+        Trajectory zone3_3 = drive.trajectoryBuilder(zone3_2.end())
+                .back(6.0)
                 .build();
 
-        Trajectory adjustment = drive.trajectoryBuilder(backstage_3.end())
-                .forward(6.0)
+        Trajectory zone3_4 = drive.trajectoryBuilder(zone3_3.end())
+                .strafeLeft(20.0)
                 .build();
 
-        Trajectory zone1_backdrop = drive.trajectoryBuilder(adjustment.end())
-                .strafeRight(6.0)
+        Trajectory zone3_5 = drive.trajectoryBuilder(zone3_4.end())
+                .lineToLinearHeading(new Pose2d(-12,6, Math.toRadians(180)))
                 .build();
 
-        Trajectory zone3_backdrop = drive.trajectoryBuilder(adjustment.end())
-                .strafeLeft(6.0)
+        Trajectory backdrop_1 = drive.trajectoryBuilder(new Pose2d(-12,6, Math.toRadians(180)))
+                .lineToLinearHeading(new Pose2d(30,6, Math.toRadians(180)))
                 .build();
 
-        TrajectoryVelocityConstraint slowSpeed = new MinVelocityConstraint(Arrays.asList(new TranslationalVelocityConstraint(60), new AngularVelocityConstraint(1)));
-
-        Trajectory strafeLeft = drive.trajectoryBuilder(adjustment.end())
-                .strafeLeft(1)
-                .build();
-
-        Trajectory strafeRight = drive.trajectoryBuilder(adjustment.end())
-                .strafeRight(1)
+        Trajectory backdrop_2 = drive.trajectoryBuilder(backdrop_1.end())
+                .splineToConstantHeading(new Vector2d(44, 30), Math.toRadians(180))
                 .build();
 
         while (!isStarted()) {
@@ -271,64 +232,45 @@ public class States_BlueRight extends LinearOpMode {
 
         if (opModeIsActive()) {
 
+            
             initAprilTag();
 
             if (zone == 1) {
 
-                drive.followTrajectory(traj1);
                 drive.followTrajectory(zone1_1);
-                openRightIntake();
                 drive.followTrajectory(zone1_2);
+                openRightIntake();
                 drive.followTrajectory(zone1_3);
+                drive.turn(Math.toRadians(180));
                 drive.followTrajectory(zone1_4);
-                sleep(250);
-                intakePixel();
-                sleep(250);
-                intakePixel();
-                closeLeftIntake();
                 drive.followTrajectory(zone1_5);
-                intakePixel();
-                drive.followTrajectory(zone1_6);
-                liftIntakePlatform();
-                drive.followTrajectory(zone1_7);
-                initIntakePlatform();
-
-
-                /*
-                drive.followTrajectory(backstage_1);
-                drive.followTrajectory(backstage_2);
-                drive.turn(Math.toRadians(190));
-                drive.followTrajectory(backstage_3);
-
-                 */
 
             } else if (zone == 2) {
 
-                drive.followTrajectory(zone2_traj1);
+                drive.followTrajectory(zone2_1);
                 openRightIntake();
-                drive.followTrajectory(zone2_traj2);
+                drive.followTrajectory(zone2_2);
                 drive.turn(Math.toRadians(90));
-                drive.followTrajectory(zone2_traj3);
-                drive.followTrajectory(zone2_traj4);
+                drive.followTrajectory(zone2_3);
 
             } else {
 
-                drive.followTrajectory(traj1);
                 drive.followTrajectory(zone3_1);
-                openRightIntake();
                 drive.followTrajectory(zone3_2);
-                drive.followTrajectory(backstage_1);
-                drive.followTrajectory(backstage_2);
-                drive.turn(Math.toRadians(190));
-                drive.followTrajectory(backstage_3);
+                openRightIntake();
+                drive.followTrajectory(zone3_3);
+                drive.followTrajectory(zone3_4);
+                drive.followTrajectory(zone3_5);
 
             }
 
+            drive.followTrajectory(backdrop_1);
+            drive.followTrajectory(backdrop_2);
 
-
+            //april tag paths
             Pose2d aprilTagStartPose = new Pose2d(0, 0, Math.toRadians(180));
-            drive.setPoseEstimate(aprilTagStartPose);//april tag paths
-
+            drive.setPoseEstimate(aprilTagStartPose);
+            
             telemetryAprilTag();
             telemetry.update();
 
@@ -348,89 +290,16 @@ public class States_BlueRight extends LinearOpMode {
             if (desiredTag != null) {
 
                 positionCraneLow();
-                sleep(1500) ;
+                sleep(2500) ;
                 extendCraneUseSensorVelocity(4000, 5000, 15, 2000);
-                //extendCraneUseSensorVelocity(4000, 5000, 15, 2000);
 
                 liftCraneSlightly(0.2);
-                sleep(500);
+                sleep(2000);
                 retractCraneVelocity(3000);
-                sleep(500);
+                sleep(1500);
                 stopCraneVelocity();
 
-
-
             }
-
-
-
-
-
-            // april tag logic
-            // initAprilTag();
-            //double oldDistance = distanceBucket.getDistance(DistanceUnit.INCH);
-            /*while(distanceBucket.getDistance(DistanceUnit.INCH) >= oldDistance*.8) {
-                drive.moveLeft(50, .5);
-                telemetry.addData("distance", distanceBucket.getDistance(DistanceUnit.INCH));
-                telemetry.update();
-            }*/
-            /*drive.moveLeft(.5);
-            while(getDistanceToAprilTag(zone) == 0){
-
-            }
-            drive.stopAllWheels();
-            oldDistance = distanceBucket.getDistance(DistanceUnit.INCH);
-            do{
-                telemetry.addData("Value: ", getDistanceToAprilTag(zone));
-                telemetry.update();
-                if(getDistanceToAprilTag(zone) != 0) {
-                    if (getDistanceToAprilTag(zone) > 4) {
-                        drive.stopAllWheels();
-                        telemetry.addLine("1");
-                        telemetry.update();
-                        drive.moveLeft(.5);
-                    } else if (getDistanceToAprilTag(zone) < 3) {
-                        drive.stopAllWheels();
-                        telemetry.addLine("2");
-                        telemetry.update();
-                        drive.moveRight(.5);
-                    } else if (getDistanceToAprilTag(zone) == 0) {
-
-                    }
-                    else {
-                        telemetry.addLine("3");
-                        telemetry.update();
-                        break;
-                    }
-                }
-            }while (getDistanceToAprilTag(zone) > 4 || getDistanceToAprilTag(zone) < 3 || getDistanceToAprilTag(zone) == 0 || distanceBucket.getDistance(DistanceUnit.INCH) > oldDistance*1.2);
-            */
-
-
-
-            // testing placing a pixel at high level
-            /*
-            positionCraneLow();
-            extendCraneUseSensor(0.8,10000, 12.5, 1500);
-            sleep(250);
-            positionCraneMedium();
-            sleep(250);
-            retractCraneHome(0.8, 2500);
-            sleep(250);
-            */
-
-
-            /*
-            positionCraneBase();
-            sleep(250);
-            retractCraneHome(0.8, 10000);
-            sleep(250);
-
-
-             */
-
-
-
 
         }
 
@@ -475,7 +344,7 @@ public class States_BlueRight extends LinearOpMode {
     }
 
     void openLeftIntake() {
-        intakeLeft.setPosition(0.9);
+        intakeLeft.setPosition(1.0);
     }
 
     void closeLeftIntake() {
@@ -782,17 +651,18 @@ public class States_BlueRight extends LinearOpMode {
         // sleep values in this function need to be modified
         lowerRamp();
         readyIntakePlatform();
-        //sleep(100);
+        sleep (1000) ;
         closeRightIntake();
         closeLeftIntake();
-        sleep(1000);
-        liftRamp();
-        initIntakePlatform();
+        sleep(3000) ;
         openRightIntake();
         openLeftIntake();
-        sleep(100);
-    }
 
+        liftRamp();
+        initIntakePlatform();
+        sleep(2000) ;
+
+    }
     private double getDistanceToAprilTag(int zone){
         List<AprilTagDetection> currentDetections = aprilTag.getDetections();
         for (AprilTagDetection detection : currentDetections) {
