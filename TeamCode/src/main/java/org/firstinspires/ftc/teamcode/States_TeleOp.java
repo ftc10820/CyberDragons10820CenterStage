@@ -149,7 +149,7 @@ public class States_TeleOp extends LinearOpMode {
             }
 
             if (gamepad1.y) {
-                int retval = extendCraneUseColorSensorVelocity(CRANE_MAX_VELOCITY, 5000, 600, 3000);
+                int retval = extendCraneUseColorSensorVelocity(CRANE_MAX_VELOCITY, 5000, 800, 3000);
                 //sleep(200) ;
                 // the below part cane be made asynchronous
                 if (retval == 0) {
@@ -642,18 +642,18 @@ public class States_TeleOp extends LinearOpMode {
             if (colorVal > BUCKET_COLOR_FIRST_THRESHOLD) {
                 crane.setVelocity(vel*0.5);
             }
-            */
+             */
 
             if ((crane.getCurrentPosition() > CRANE_MAX_ENCODER_VAL) || (eTime1.milliseconds() > timeout_milli))
                 break ;
 
-            if((colorVal = colorBucket.red()) >= 40) { stopCrane(); break ; }
+            if((colorVal = colorBucket.red()) >= BUCKET_COLOR_FINAL_THRESHOLD) { stopCrane(); break ; }
 
             if (gamepad2.right_bumper) {
                 tPressed = true ;
                 break ;
             }
-            if((colorVal = colorBucket.red()) >= 40) { stopCrane(); break ; }
+            if((colorVal = colorBucket.red()) >= BUCKET_COLOR_FINAL_THRESHOLD) { stopCrane(); break ; }
             if (gamepad1.dpad_right) // note change
                 moveLeft(0.3) ;
             else {
@@ -662,7 +662,7 @@ public class States_TeleOp extends LinearOpMode {
                 else
                     stopAllWheelsNoInterrupt();
             }
-            if((colorVal = colorBucket.red()) >= 40) { stopCrane(); break ; }
+            if((colorVal = colorBucket.red()) >= BUCKET_COLOR_FINAL_THRESHOLD) { stopCrane(); break ; }
 
             if (gamepad2.y) {
                 aPressed = false ;
@@ -673,7 +673,7 @@ public class States_TeleOp extends LinearOpMode {
                     slow_time = slow_time + 1000;
                 }
             }
-            if((colorVal = colorBucket.red()) >= 40) { stopCrane(); break ; }
+            if((colorVal = colorBucket.red()) >= BUCKET_COLOR_FINAL_THRESHOLD) { stopCrane(); break ; }
             if (gamepad2.a) {
                 yPressed = false ;
                 if (aPressed == false)  {
@@ -681,7 +681,7 @@ public class States_TeleOp extends LinearOpMode {
                     liftCraneSlightly(-0.05);
                 }
             }
-            if((colorVal = colorBucket.red()) >= 40) { stopCrane(); break ; }
+            if((colorVal = colorBucket.red()) >= BUCKET_COLOR_FINAL_THRESHOLD) { stopCrane(); break ; }
             if (!(gamepad2.y || gamepad2.a)) {
                 yPressed = false ;
                 aPressed = false ;
