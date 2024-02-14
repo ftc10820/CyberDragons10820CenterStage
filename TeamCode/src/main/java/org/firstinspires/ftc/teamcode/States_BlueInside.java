@@ -4,12 +4,7 @@ import android.util.Size;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
-import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
-import com.acmerobotics.roadrunner.trajectory.constraints.AngularVelocityConstraint;
-import com.acmerobotics.roadrunner.trajectory.constraints.MinVelocityConstraint;
-import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryVelocityConstraint;
-import com.acmerobotics.roadrunner.trajectory.constraints.TranslationalVelocityConstraint;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
@@ -25,22 +20,19 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.Exposur
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
-import org.firstinspires.ftc.teamcode.drive.DriveConstants;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 
 
 @Autonomous
 @Config
-public class States_BlueRight extends LinearOpMode {
+public class States_BlueInside extends LinearOpMode {
 
     //private org.firstinspires.ftc.vision.apriltag.AprilTagDetection desiredTag = null;
 
@@ -150,34 +142,25 @@ public class States_BlueRight extends LinearOpMode {
         initialize();
         initIntakePlatform();
         closeRightIntake();
+        closeLeftIntake();
 
         vision = new VisionSubsystem(hardwareMap);
         vision.setAlliance("blue");
 
         drive = new SampleMecanumDrive(hardwareMap);
 
+        drive = new SampleMecanumDrive(hardwareMap);
+
         //Starting the robot at the bottom left (blue auto)
-        Pose2d startPose = new Pose2d(-36, 60, Math.toRadians(90));
+        Pose2d startPose = new Pose2d(12, 60, Math.toRadians(90));
         drive.setPoseEstimate(startPose);
 
         Trajectory zone1_1 = drive.trajectoryBuilder(startPose)
-                .lineToLinearHeading(new Pose2d(-40,32, Math.toRadians(0)))
+                .lineToLinearHeading(new Pose2d(28,34, Math.toRadians(180)))
                 .build();
 
         Trajectory zone1_2 = drive.trajectoryBuilder(zone1_1.end())
-                .forward(8.0)
-                .build();
-
-        Trajectory zone1_3 = drive.trajectoryBuilder(zone1_2.end())
-                .back(10.0)
-                .build();
-
-        Trajectory zone1_4 = drive.trajectoryBuilder(zone1_3.end().plus(new Pose2d(0,0, Math.toRadians(180))))
-                .strafeLeft(20.0)
-                .build();
-
-        Trajectory zone1_5 = drive.trajectoryBuilder(zone1_4.end())
-                .lineToLinearHeading(new Pose2d(-12,6, Math.toRadians(180)))
+                .back(16.0)
                 .build();
 
         Trajectory zone2_1 = drive.trajectoryBuilder(startPose)
@@ -189,36 +172,25 @@ public class States_BlueRight extends LinearOpMode {
                 .build();
 
         Trajectory zone2_3 = drive.trajectoryBuilder(zone2_2.end().plus(new Pose2d(0,0, Math.toRadians(90))))
-                .lineToLinearHeading(new Pose2d(-12,6, Math.toRadians(180)))
+                .back(32)
+                .build();
+
+        Trajectory zone2_4 = drive.trajectoryBuilder(zone2_3.end())
+                .strafeRight(24.0)
                 .build();
 
         Trajectory zone3_1 = drive.trajectoryBuilder(startPose)
-                .lineToLinearHeading(new Pose2d(-40,24, Math.toRadians(180)))
+                .lineToLinearHeading(new Pose2d(28,34, Math.toRadians(180)))
                 .build();
 
         Trajectory zone3_2 = drive.trajectoryBuilder(zone3_1.end())
-                .forward(3.0)
+                .forward(23.0)
                 .build();
 
         Trajectory zone3_3 = drive.trajectoryBuilder(zone3_2.end())
-                .back(6.0)
+                .back(40)
                 .build();
 
-        Trajectory zone3_4 = drive.trajectoryBuilder(zone3_3.end())
-                .strafeLeft(20.0)
-                .build();
-
-        Trajectory zone3_5 = drive.trajectoryBuilder(zone3_4.end())
-                .lineToLinearHeading(new Pose2d(-12,6, Math.toRadians(180)))
-                .build();
-
-        Trajectory backdrop_1 = drive.trajectoryBuilder(new Pose2d(-12,6, Math.toRadians(180)))
-                .lineToLinearHeading(new Pose2d(30,6, Math.toRadians(180)))
-                .build();
-
-        Trajectory backdrop_2 = drive.trajectoryBuilder(backdrop_1.end())
-                .splineToConstantHeading(new Vector2d(44, 30), Math.toRadians(180))
-                .build();
 
         while (!isStarted()) {
             vision.elementDetection(telemetry);
@@ -233,48 +205,37 @@ public class States_BlueRight extends LinearOpMode {
 
         waitForStart();
 
-
         if (opModeIsActive()) {
 
-            
             initAprilTag();
 
             if (zone == 1) {
 
                 drive.followTrajectory(zone1_1);
+                openLeftIntake();
                 drive.followTrajectory(zone1_2);
-                openRightIntake();
-                drive.followTrajectory(zone1_3);
-                drive.turn(Math.toRadians(180));
-                drive.followTrajectory(zone1_4);
-                drive.followTrajectory(zone1_5);
 
             } else if (zone == 2) {
 
                 drive.followTrajectory(zone2_1);
-                openRightIntake();
+                openLeftIntake();
                 drive.followTrajectory(zone2_2);
                 drive.turn(Math.toRadians(90));
                 drive.followTrajectory(zone2_3);
+                drive.followTrajectory(zone2_4);
 
             } else {
 
                 drive.followTrajectory(zone3_1);
                 drive.followTrajectory(zone3_2);
-                openRightIntake();
+                openLeftIntake();
                 drive.followTrajectory(zone3_3);
-                drive.followTrajectory(zone3_4);
-                drive.followTrajectory(zone3_5);
 
             }
 
-            drive.followTrajectory(backdrop_1);
-            drive.followTrajectory(backdrop_2);
-
-            //april tag paths
             Pose2d aprilTagStartPose = new Pose2d(0, 0, Math.toRadians(180));
-            drive.setPoseEstimate(aprilTagStartPose);
-            
+            drive.setPoseEstimate(aprilTagStartPose);//april tag paths
+
             telemetryAprilTag();
             telemetry.update();
 
@@ -293,16 +254,22 @@ public class States_BlueRight extends LinearOpMode {
 
             if (desiredTag != null) {
 
-                positionCraneLow();
-                sleep(2500) ;
+                positionCraneMedium();
+                sleep(1000) ;
                 extendCraneUseColorSensorVelocity(CRANE_MAX_VELOCITY, 5000, 600, 3000);
 
                 liftCraneSlightly(0.2);
-                sleep(2000);
+                sleep(500);
                 retractCraneHomeVelocity(CRANE_MAX_VELOCITY, 2000);
                 positionCraneBase();
                 retractCraneHomeVelocity(CRANE_MAX_VELOCITY, 2000);
             }
+
+            Trajectory park = drive.trajectoryBuilder(strafeAprilTag.end())
+                    .strafeRight(18.0 + (6 * (aprilTagZone - 1)))
+                    .build();
+
+            drive.followTrajectory(park);
 
         }
 

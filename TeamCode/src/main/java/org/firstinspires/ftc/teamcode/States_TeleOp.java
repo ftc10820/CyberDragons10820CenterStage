@@ -121,6 +121,9 @@ public class States_TeleOp extends LinearOpMode {
             telemetry.addData("bucket: ", "alpha " + colorBucket.alpha() + " red " + colorBucket.red() + " green " + colorBucket.green() + " blue " + colorBucket.blue() + " hue " + colorBucket.argb());
             telemetry.update();
 
+            //drivetrain
+            driveMethod();
+
             // light up the LEDs
             if(isPixelDetectedLeft()) {
                 ledLeft.setPower(1.0);
@@ -149,7 +152,7 @@ public class States_TeleOp extends LinearOpMode {
             }
 
             if (gamepad1.y) {
-                int retval = extendCraneUseColorSensorVelocity(CRANE_MAX_VELOCITY, 5000, 800, 3000);
+                int retval = extendCraneUseColorSensorVelocity(2500, 5000, 800, 3000);
                 //sleep(200) ;
                 // the below part cane be made asynchronous
                 if (retval == 0) {
@@ -173,6 +176,12 @@ public class States_TeleOp extends LinearOpMode {
                 positionCraneLow();
             } else if (gamepad2.b)
                 positionCraneHigh();
+
+            if (gamepad1.dpad_right) // note change
+                moveLeft(0.3);
+
+            if(gamepad1.dpad_left) // note change
+                moveRight(0.3);
 
             // take distance sensor and touch sensor into account
             // logic for manual control of linear slide
