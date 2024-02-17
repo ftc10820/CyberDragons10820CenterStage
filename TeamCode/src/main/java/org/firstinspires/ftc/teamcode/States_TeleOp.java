@@ -89,6 +89,19 @@ public class States_TeleOp extends LinearOpMode {
     final int CRANE_MAX_ENCODER_VAL = 4500;
     final double CRANE_MAX_VELOCITY = 4000 ;
 
+    final double CRANE_ANGLE_HOME = 0.0 ;
+    final double CRANE_ANGLE_HOME_LOW = 0.30 ;
+    final double CRANE_ANGLE_LOW = 0.65 ;
+    final double CRANE_ANGLE_LOW_MEDIUM = 0.7 ;
+    final double CRANE_ANGLE_MEDIUM = 0.8 ;
+    final double CRANE_ANGLE_MEDIUM_HIGH = 0.85 ;
+    final double CRANE_ANGLE_HIGH = 0.95 ;
+
+    final int POS1 = 1 ;
+    final int POS2 = 2;
+    final int POS3 = 3;
+    final int POS0 = 0 ;
+
     double cranePosUp = 0.0 ;
     double cranePosDown = 1.0 ;
     double curCranePos = 0.0 ;
@@ -152,12 +165,32 @@ public class States_TeleOp extends LinearOpMode {
             }
 
             if (gamepad1.y) {
-                int retval = extendCraneUseColorSensorVelocity(2500, 5000, 800, 3000);
+                int colorVal = 700 ; // default value
+                int curPos = POS0 ;
+                double newPos = CRANE_ANGLE_LOW ;
+                double craneAngle = getCurrentCranePos() ;
+                if ((craneAngle > CRANE_ANGLE_HOME_LOW) && (craneAngle < CRANE_ANGLE_LOW_MEDIUM)) {
+                    colorVal = 600 ;
+                    curPos = POS1 ;
+                    newPos = CRANE_ANGLE_LOW + 0.1 ;
+                }
+                if ((craneAngle > CRANE_ANGLE_LOW_MEDIUM) && (craneAngle < CRANE_ANGLE_MEDIUM_HIGH)) {
+                    colorVal = 700 ;
+                    curPos = POS2 ;
+                    newPos = CRANE_ANGLE_MEDIUM + 0.1 ;
+                }
+                if (craneAngle >= CRANE_ANGLE_HIGH) {
+                    colorVal = 200 ;
+                    curPos = POS3 ;
+                    newPos = CRANE_ANGLE_HIGH + 0.1 ;
+                }
+
+                int retval = extendCraneUseColorSensorVelocity(2500, 5000, colorVal, 5000);
                 //sleep(200) ;
                 // the below part cane be made asynchronous
                 if (retval == 0) {
-                    liftCraneSlightly(0.2);
-                    sleep(250) ;
+                    setCranePos(newPos);
+                    sleep(1000) ;
                     retractCraneHomeVelocity(CRANE_MAX_VELOCITY, 2000);
                     positionCraneBase();
                     retractCraneHomeVelocity(CRANE_MAX_VELOCITY, 2000);
@@ -726,7 +759,9 @@ public class States_TeleOp extends LinearOpMode {
             if (craneAngle.getPosition() > 0.8)
                 ttime = ttime + 500;
             eTime1.reset();
-            while((eTime1.milliseconds() < ttime) && (colorBucket.red() < backdrop_color_val)) {
+            while(colorBucket.red() < backdrop_color_val) {
+                if ((crane.getCurrentPosition() > CRANE_MAX_ENCODER_VAL) || (eTime1.milliseconds() > ttime))
+                    break ;
                 if (gamepad2.right_bumper) {
                     tPressed = true ;
                     break ;
@@ -795,19 +830,30 @@ public class States_TeleOp extends LinearOpMode {
         stopCrane();
     }
     void positionCraneLow() {
-        craneAngle.setPosition(0.60);
+        craneAngle.setPosition(CRANE_ANGLE_LOW);
     }
     void positionCraneMedium() {
-        craneAngle.setPosition(0.75);
+        craneAngle.setPosition(CRANE_ANGLE_MEDIUM);
     }
     void positionCraneHigh() {
-        craneAngle.setPosition(0.90);
+        craneAngle.setPosition(CRANE_ANGLE_HIGH);
     }
 
     void positionCraneBase() {
-        craneAngle.setPosition(0);
+        craneAngle.setPosition(CRANE_ANGLE_HOME);
     }
 
+    double getCurrentCranePos() {
+        return craneAngle.getPosition();
+    }
+
+    void setCranePos(double newPos) {
+        if (newPos > 1.0)
+            newPos = 1.0;
+        if (newPos < 0.0)
+            newPos = 0.0 ;
+        craneAngle.setPosition(newPos);
+    }
     void liftCraneSlightly(double incr) {
         craneAngle.setPosition(craneAngle.getPosition() + incr);
     }

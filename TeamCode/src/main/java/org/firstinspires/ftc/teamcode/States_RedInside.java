@@ -135,6 +135,19 @@ public class States_RedInside extends LinearOpMode {
     final int CRANE_MAX_ENCODER_VAL = 4500;
     final double CRANE_MAX_VELOCITY = 4000 ;
 
+    final double CRANE_ANGLE_HOME = 0.0 ;
+    final double CRANE_ANGLE_HOME_LOW = 0.30 ;
+    final double CRANE_ANGLE_LOW = 0.65 ;
+    final double CRANE_ANGLE_LOW_MEDIUM = 0.7 ;
+    final double CRANE_ANGLE_MEDIUM = 0.8 ;
+    final double CRANE_ANGLE_MEDIUM_HIGH = 0.85 ;
+    final double CRANE_ANGLE_HIGH = 0.95 ;
+
+    final int POS1 = 1 ;
+    final int POS2 = 2;
+    final int POS3 = 3;
+    final int POS0 = 0 ;
+
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -537,17 +550,29 @@ public class States_RedInside extends LinearOpMode {
         stopCrane();
     }
     void positionCraneLow() {
-        craneAngle.setPosition(0.53);
+        craneAngle.setPosition(CRANE_ANGLE_LOW);
     }
     void positionCraneMedium() {
-        craneAngle.setPosition(0.65);
+        craneAngle.setPosition(CRANE_ANGLE_MEDIUM);
     }
     void positionCraneHigh() {
-        craneAngle.setPosition(0.85);
+        craneAngle.setPosition(CRANE_ANGLE_HIGH);
     }
 
     void positionCraneBase() {
-        craneAngle.setPosition(0);
+        craneAngle.setPosition(CRANE_ANGLE_HOME);
+    }
+
+    double getCurrentCranePos() {
+        return craneAngle.getPosition();
+    }
+
+    void setCranePos(double newPos) {
+        if (newPos > 1.0)
+            newPos = 1.0;
+        if (newPos < 0.0)
+            newPos = 0.0 ;
+        craneAngle.setPosition(newPos);
     }
 
     void initDroneLauncher() {
