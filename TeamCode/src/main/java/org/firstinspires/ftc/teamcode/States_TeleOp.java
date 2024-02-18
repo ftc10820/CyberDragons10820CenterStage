@@ -180,7 +180,7 @@ public class States_TeleOp extends LinearOpMode {
                     newPos = CRANE_ANGLE_MEDIUM + 0.1 ;
                 }
                 if (craneAngle >= CRANE_ANGLE_HIGH) {
-                    colorVal = 200 ;
+                    colorVal = 150 ;
                     curPos = POS3 ;
                     newPos = CRANE_ANGLE_HIGH + 0.1 ;
                 }
@@ -265,7 +265,7 @@ public class States_TeleOp extends LinearOpMode {
              */
 
             // only for end game
-            //if(eTeleOp.milliseconds() > 90000) {
+            if(eTeleOp.milliseconds() > 90000) {
             driveSuspension(-gamepad2.right_stick_y);
 
             if (gamepad2.right_trigger > 0) {
@@ -278,7 +278,7 @@ public class States_TeleOp extends LinearOpMode {
                 sleep(100);
                 stopCrane();
             }
-            //}
+            }
 
             if(gamepad2.dpad_up) { // throws pixel into bucket
                 liftIntakePlatform();
@@ -522,7 +522,7 @@ public class States_TeleOp extends LinearOpMode {
 
     void initIntakePlatform() {
         // keep it slightly up so it doesnt drag on the floor
-        indexer.setPosition(0.25);
+        indexer.setPosition(0.3);
     }
 
     void liftIntakePlatform() {
@@ -904,7 +904,7 @@ public class States_TeleOp extends LinearOpMode {
         // sleep values in this function need to be modified
         lowerRamp();
         readyIntakePlatform();
-        //sleep(100);
+        sleep(5 00);
         closeRightIntake();
         closeLeftIntake();
         sleep(1000);

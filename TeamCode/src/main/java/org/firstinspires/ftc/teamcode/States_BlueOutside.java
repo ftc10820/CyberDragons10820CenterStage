@@ -167,7 +167,7 @@ public class States_BlueOutside extends LinearOpMode {
         drive.setPoseEstimate(startPose);
 
         Trajectory zone1_1 = drive.trajectoryBuilder(startPose)
-                .lineToLinearHeading(new Pose2d(-40,32, Math.toRadians(0)))
+                .lineToLinearHeading(new Pose2d(-40,34, Math.toRadians(0)))
                 .build();
 
         Trajectory zone1_2 = drive.trajectoryBuilder(zone1_1.end())
@@ -305,7 +305,16 @@ public class States_BlueOutside extends LinearOpMode {
             visionPortal.setProcessorEnabled(aprilTag, false);
 
             if (desiredTag != null) {
+                setCranePos(0.7); // in between low and medium
+                sleep(1500) ;
+                extendCraneUseColorSensorVelocity(2500, 5000, 600, 3000);
+                setCranePos(CRANE_ANGLE_MEDIUM);
+                sleep(1000) ;
+                retractCraneHomeVelocity(CRANE_MAX_VELOCITY, 2000);
+                positionCraneBase();
+                retractCraneHomeVelocity(CRANE_MAX_VELOCITY, 2000);
 
+                /*
                 positionCraneMedium();
                 sleep(1000) ;
                 extendCraneUseColorSensorVelocity(CRANE_MAX_VELOCITY, 5000, 600, 3000);
@@ -315,6 +324,8 @@ public class States_BlueOutside extends LinearOpMode {
                 retractCraneHomeVelocity(CRANE_MAX_VELOCITY, 2000);
                 positionCraneBase();
                 retractCraneHomeVelocity(CRANE_MAX_VELOCITY, 2000);
+
+                 */
             }
 
         }
@@ -526,7 +537,7 @@ public class States_BlueOutside extends LinearOpMode {
             }
             */
 
-            if ((crane.getCurrentPosition() > CRANE_MAX_ENCODER_VAL) || (eTime1.milliseconds() > timeout_milli))
+            if ((crane.getCurrentPosition() > CRANE_MAX_ENCODER_VAL) || (eTime1.milliseconds() > timeout_milli) )
                 break ;
 
         }
@@ -550,7 +561,7 @@ public class States_BlueOutside extends LinearOpMode {
             if (craneAngle.getPosition() > 0.8)
                 ttime = ttime + 500;
             eTime1.reset();
-            while((eTime1.milliseconds() < ttime) && (colorBucket.red() < backdrop_color_val)) {
+            while((eTime1.milliseconds() < ttime) && (colorBucket.red() < backdrop_color_val) && (crane.getCurrentPosition() < CRANE_MAX_ENCODER_VAL)) {
             }
             stopCrane();
 

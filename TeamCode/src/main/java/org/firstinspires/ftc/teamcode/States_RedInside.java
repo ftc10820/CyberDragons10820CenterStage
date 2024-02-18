@@ -269,7 +269,16 @@ public class States_RedInside extends LinearOpMode {
             visionPortal.setProcessorEnabled(aprilTag, false);
 
             if (desiredTag != null) {
+                setCranePos(0.7); // in between low and medium
+                sleep(1500) ;
+                extendCraneUseColorSensorVelocity(2500, 5000, 600, 3000);
+                setCranePos(CRANE_ANGLE_MEDIUM);
+                sleep(1000) ;
+                retractCraneHomeVelocity(CRANE_MAX_VELOCITY, 2000);
+                positionCraneBase();
+                retractCraneHomeVelocity(CRANE_MAX_VELOCITY, 2000);
 
+                /*
                 positionCraneMedium();
                 sleep(1000) ;
                 extendCraneUseColorSensorVelocity(CRANE_MAX_VELOCITY, 5000, 600, 3000);
@@ -279,10 +288,12 @@ public class States_RedInside extends LinearOpMode {
                 retractCraneHomeVelocity(CRANE_MAX_VELOCITY, 2000);
                 positionCraneBase();
                 retractCraneHomeVelocity(CRANE_MAX_VELOCITY, 2000);
+
+                 */
             }
 
             Trajectory park = drive.trajectoryBuilder(strafeAprilTag.end())
-                    .strafeLeft(18.0 + (6 * (aprilTagZone - 4)))
+                    .strafeLeft(18.0 + (6 * Math.abs(aprilTagZone - 6)))
                     .build();
 
             drive.followTrajectory(park);
@@ -520,7 +531,7 @@ public class States_RedInside extends LinearOpMode {
             if (craneAngle.getPosition() > 0.8)
                 ttime = ttime + 500;
             eTime1.reset();
-            while((eTime1.milliseconds() < ttime) && (colorBucket.red() < backdrop_color_val)) {
+            while((eTime1.milliseconds() < ttime) && (colorBucket.red() < backdrop_color_val) && (crane.getCurrentPosition() < CRANE_MAX_ENCODER_VAL)) {
             }
             stopCrane();
 
